@@ -71,9 +71,9 @@ Uses OpenAI models exclusively:
   "preset": "openai",
   "presets": {
     "openai": {
-      "orchestrator": { "model": "openai/gpt-5.2-codex", "skills": ["*"], "mcps": ["websearch"] },
+      "orchestrator": { "model": "openai/gpt-5.2-codex", "skills": ["*"], "mcps": [] },
       "oracle": { "model": "openai/gpt-5.2-codex", "variant": "high", "skills": [], "mcps": [] },
-      "librarian": { "model": "openai/gpt-5.1-codex-mini", "variant": "low", "skills": [], "mcps": ["websearch", "context7", "grep_app"] },
+      "librarian": { "model": "openai/gpt-5.1-codex-mini", "variant": "low", "skills": [], "mcps": ["linkup", "context7", "grep_app"] },
       "explorer": { "model": "openai/gpt-5.1-codex-mini", "variant": "low", "skills": [], "mcps": [] },
       "designer": { "model": "openai/gpt-5.1-codex-mini", "variant": "medium", "skills": ["agent-browser"], "mcps": [] },
       "fixer": { "model": "openai/gpt-5.1-codex-mini", "variant": "low", "skills": [], "mcps": [] }
@@ -125,7 +125,7 @@ Mixed setup combining multiple providers:
     "alvin": {
       "orchestrator": { "model": "google/claude-opus-4-5-thinking", "skills": ["*"], "mcps": ["*"] },
       "oracle": { "model": "openai/gpt-5.2-codex", "variant": "high", "skills": [], "mcps": [] },
-      "librarian": { "model": "google/gemini-3-flash", "variant": "low", "skills": [], "mcps": ["websearch", "context7", "grep_app"] },
+      "librarian": { "model": "google/gemini-3-flash", "variant": "low", "skills": [], "mcps": ["linkup", "context7", "grep_app"] },
       "explorer": { "model": "cerebras/zai-glm-4.7", "variant": "low", "skills": [], "mcps": [] },
       "designer": { "model": "google/gemini-3-flash", "variant": "medium", "skills": ["agent-browser"], "mcps": [] },
       "fixer": { "model": "cerebras/zai-glm-4.7", "variant": "low", "skills": [], "mcps": [] }
@@ -258,7 +258,7 @@ Built-in Model Context Protocol servers (enabled by default):
 
 | MCP | Purpose | URL |
 |-----|---------|-----|
-| `websearch` | Real-time web search via Exa AI | `https://mcp.exa.ai/mcp` |
+| `linkup` | Real-time web search via Linkup | `https://mcp.linkup.so/mcp` |
 | `context7` | Official library documentation | `https://mcp.context7.com/mcp` |
 | `grep_app` | GitHub code search via grep.app | `https://mcp.grep.app` |
 
@@ -268,10 +268,10 @@ Control which agents can access which MCP servers using per-agent allowlists:
 
 | Agent | Default MCPs |
 |-------|--------------|
-| `orchestrator` | `websearch` |
+| `orchestrator` | none |
 | `designer` | none |
 | `oracle` | none |
-| `librarian` | `websearch`, `context7`, `grep_app` |
+| `librarian` | `linkup`, `context7`, `grep_app` |
 | `explorer` | none |
 | `fixer` | none |
 
@@ -287,7 +287,7 @@ Control which agents can access which MCP servers using the `mcps` array in your
 |--------|-------------|---------|
 | `"*"` | All MCPs | `["*"]` |
 | `"!item"` | Exclude specific MCP | `["*", "!context7"]` |
-| Explicit list | Only listed MCPs | `["websearch", "context7"]` |
+| Explicit list | Only listed MCPs | `["linkup", "context7"]` |
 | `"!*"` | Deny all MCPs | `["!*"]` |
 
 **Rules:**
@@ -303,13 +303,13 @@ Control which agents can access which MCP servers using the `mcps` array in your
   "presets": {
     "my-preset": {
       "orchestrator": {
-        "mcps": ["websearch"]
+        "mcps": []
       },
       "librarian": {
-        "mcps": ["websearch", "context7", "grep_app"]
+        "mcps": ["linkup", "context7", "grep_app"]
       },
       "oracle": {
-        "mcps": ["*", "!websearch"]
+        "mcps": ["*", "!linkup"]
       }
     }
   }
@@ -504,6 +504,6 @@ The installer generates this file based on your providers. You can manually cust
 | `tmux.enabled` | boolean | `false` | Enable tmux pane spawning for sub-agents |
 | `tmux.layout` | string | `"main-vertical"` | Layout preset: `main-vertical`, `main-horizontal`, `tiled`, `even-horizontal`, `even-vertical` |
 | `tmux.main_pane_size` | number | `60` | Main pane size as percentage (20-80) |
-| `disabled_mcps` | string[] | `[]` | MCP server IDs to disable globally (e.g., `"websearch"`) |
+| `disabled_mcps` | string[] | `[]` | MCP server IDs to disable globally (e.g., `"linkup"`) |
 
 > **Note:** Agent configuration should be defined within `presets`. The root-level `agents` field is deprecated.

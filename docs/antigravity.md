@@ -116,7 +116,7 @@ If you prefer to configure manually, edit `~/.config/opencode/oh-my-opencode-sli
       "orchestrator": {
         "model": "google/antigravity-gemini-3-flash",
         "skills": ["*"],
-        "mcps": ["websearch"]
+        "mcps": []
       },
       "oracle": {
         "model": "google/antigravity-gemini-3.1-pro",
@@ -133,7 +133,7 @@ If you prefer to configure manually, edit `~/.config/opencode/oh-my-opencode-sli
         "model": "google/antigravity-gemini-3-flash",
         "variant": "low",
         "skills": [],
-        "mcps": ["websearch", "context7", "grep_app"]
+        "mcps": ["linkup", "context7", "grep_app"]
       },
       "designer": {
         "model": "google/antigravity-gemini-3-flash",

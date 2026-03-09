@@ -339,8 +339,8 @@ describe('providers', () => {
     });
 
     const agents = (config.presets as any)['zen-free'];
-    expect(agents.orchestrator.mcps).toContain('websearch');
-    expect(agents.librarian.mcps).toContain('websearch');
+    expect(agents.orchestrator.mcps).toContain('linkup');
+    expect(agents.librarian.mcps).toContain('linkup');
     expect(agents.librarian.mcps).toContain('context7');
     expect(agents.librarian.mcps).toContain('grep_app');
     expect(agents.designer.mcps).toEqual([]);

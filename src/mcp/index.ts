@@ -1,13 +1,13 @@
 import type { McpName } from '../config';
 import { context7 } from './context7';
 import { grep_app } from './grep-app';
+import { linkup } from './linkup';
 import type { McpConfig } from './types';
-import { websearch } from './websearch';
 
 export type { LocalMcpConfig, McpConfig, RemoteMcpConfig } from './types';
 
 const allBuiltinMcps: Record<McpName, McpConfig> = {
-  websearch,
+  linkup,
   context7,
   grep_app,
 };

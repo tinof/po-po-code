@@ -129,12 +129,16 @@ export const PresetSchema = z.record(z.string(), AgentOverrideConfigSchema);
 export type Preset = z.infer<typeof PresetSchema>;
 
 // MCP names
-export const McpNameSchema = z.enum(['websearch', 'context7', 'grep_app']);
+export const McpNameSchema = z.enum(['linkup', 'context7', 'grep_app']);
 export type McpName = z.infer<typeof McpNameSchema>;
 
 // Background task configuration
 export const BackgroundTaskConfigSchema = z.object({
   maxConcurrentStarts: z.number().min(1).max(50).default(10),
+  /** Per-agent timeout overrides in ms (e.g. { fixer: 180000 }) */
+  agentTimeouts: z.record(z.string(), z.number().min(0)).optional(),
+  /** Global stall detection threshold in ms (default: 120000 = 2 min) */
+  stallTimeoutMs: z.number().min(0).optional(),
 });
 
 export type BackgroundTaskConfig = z.infer<typeof BackgroundTaskConfigSchema>;

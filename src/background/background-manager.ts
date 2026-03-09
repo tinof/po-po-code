@@ -74,6 +74,7 @@ export interface BackgroundTask {
   startedAt: Date; // Task creation timestamp
   completedAt?: Date; // Task completion/failure timestamp
   prompt: string; // Initial prompt
+  lastActivityAt?: Date; // Last tool execution timestamp (for stall detection)
 }
 
 /**
@@ -111,6 +112,23 @@ export class BackgroundTaskManager {
     string,
     (task: BackgroundTask) => void
   >();
+
+  // Timeout monitoring
+  private timeoutMonitor?: ReturnType<typeof setInterval>;
+
+  /** Default per-agent timeout in ms. Overridable via config.background.agentTimeouts */
+  private static readonly DEFAULT_AGENT_TIMEOUTS: Record<string, number> = {
+    fixer: 3 * 60 * 1000, // 3 min — execution-only, should be fast
+    explorer: 5 * 60 * 1000, // 5 min — codebase exploration
+    librarian: 5 * 60 * 1000, // 5 min — doc lookups
+    oracle: 10 * 60 * 1000, // 10 min — deep analysis
+    designer: 5 * 60 * 1000, // 5 min — UI work
+    general: 5 * 60 * 1000, // 5 min — general purpose
+  };
+  /** Default stall detection threshold (no tool activity for this long) */
+  private static readonly DEFAULT_STALL_TIMEOUT_MS = 2 * 60 * 1000; // 2 min
+  /** How often to check for timed-out tasks */
+  private static readonly MONITOR_INTERVAL_MS = 15 * 1000; // 15 sec
 
   constructor(
     ctx: PluginInput,
@@ -200,6 +218,9 @@ export class BackgroundTaskManager {
     // Queue task for background start
     this.enqueueStart(task);
 
+    // Start timeout monitoring if not already running
+    this.startTimeoutMonitor();
+
     log(`[background-manager] task launched: ${task.id}`, {
       agent: opts.agent,
       description: opts.description,
@@ -244,9 +265,7 @@ export class BackgroundTaskManager {
     // primary may be a string, an array of string|{id,variant?}, or undefined
     let primaryIds: string[];
     if (Array.isArray(primary)) {
-      primaryIds = primary.map((m) =>
-        typeof m === 'string' ? m : m.id,
-      );
+      primaryIds = primary.map((m) => (typeof m === 'string' ? m : m.id));
     } else if (typeof primary === 'string') {
       primaryIds = [primary];
     } else {
@@ -339,6 +358,7 @@ export class BackgroundTaskManager {
       // Track the agent type for this session for delegation checks
       this.agentBySessionId.set(session.data.id, task.agent);
       task.status = 'running';
+      task.lastActivityAt = new Date();
 
       // Give TmuxSessionManager time to spawn the pane
       if (this.tmuxEnabled) {
@@ -733,9 +753,102 @@ export class BackgroundTaskManager {
   }
 
   /**
+   * Track tool execution activity for stall detection.
+   * Called from the plugin's tool.execute.after hook when a tool runs
+   * in a session that belongs to a background task.
+   *
+   * @param sessionId - The session ID where the tool was executed
+   */
+  handleToolActivity(sessionId: string): void {
+    const taskId = this.tasksBySessionId.get(sessionId);
+    if (!taskId) return;
+    const task = this.tasks.get(taskId);
+    if (task && task.status === 'running') {
+      task.lastActivityAt = new Date();
+    }
+  }
+
+  /**
+   * Start the periodic timeout monitor.
+   * Automatically starts when the first task is launched and
+   * stops when all tasks complete.
+   */
+  private startTimeoutMonitor(): void {
+    if (this.timeoutMonitor) return; // Already running
+    this.timeoutMonitor = setInterval(() => {
+      this.checkTimeouts();
+    }, BackgroundTaskManager.MONITOR_INTERVAL_MS);
+  }
+
+  /**
+   * Stop the periodic timeout monitor when no tasks are running.
+   */
+  private stopTimeoutMonitor(): void {
+    if (!this.timeoutMonitor) return;
+    clearInterval(this.timeoutMonitor);
+    this.timeoutMonitor = undefined;
+  }
+
+  /**
+   * Check all running tasks for timeout or stall conditions.
+   * Called periodically by the timeout monitor.
+   */
+  private checkTimeouts(): void {
+    const now = Date.now();
+    let hasRunningTasks = false;
+
+    for (const [taskId, task] of this.tasks) {
+      if (task.status !== 'running') continue;
+      hasRunningTasks = true;
+
+      const elapsed = now - task.startedAt.getTime();
+
+      // Check total task timeout (per-agent or global)
+      const agentTimeouts =
+        this.backgroundConfig.agentTimeouts ??
+        BackgroundTaskManager.DEFAULT_AGENT_TIMEOUTS;
+      const taskTimeout =
+        agentTimeouts[task.agent] ??
+        BackgroundTaskManager.DEFAULT_AGENT_TIMEOUTS[task.agent] ??
+        5 * 60 * 1000;
+
+      if (elapsed > taskTimeout) {
+        log(
+          `[background-manager] task timed out after ${Math.round(elapsed / 1000)}s: ${taskId}`,
+          { agent: task.agent, description: task.description },
+        );
+        this.cancel(taskId);
+        continue;
+      }
+
+      // Check stall detection (no tool activity for too long)
+      const stallTimeout =
+        this.backgroundConfig.stallTimeoutMs ??
+        BackgroundTaskManager.DEFAULT_STALL_TIMEOUT_MS;
+      const lastActivity =
+        task.lastActivityAt?.getTime() ?? task.startedAt.getTime();
+      const stallDuration = now - lastActivity;
+
+      if (stallDuration > stallTimeout) {
+        log(
+          `[background-manager] task stalled (${Math.round(stallDuration / 1000)}s no activity): ${taskId}`,
+          { agent: task.agent, description: task.description },
+        );
+        this.cancel(taskId);
+      }
+    }
+
+    // Stop monitor if no running tasks remain
+    if (!hasRunningTasks) {
+      this.stopTimeoutMonitor();
+    }
+  }
+
+  /**
    * Clean up all tasks.
    */
   cleanup(): void {
+    this.stopTimeoutMonitor();
     this.startQueue = [];
     this.completionResolvers.clear();
     this.tasks.clear();

@@ -6,7 +6,7 @@ describe('createBuiltinMcps', () => {
     const mcps = createBuiltinMcps();
     const names = Object.keys(mcps);
 
-    expect(names).toContain('websearch');
+    expect(names).toContain('linkup');
     expect(names).toContain('context7');
     expect(names).toContain('grep_app');
   });
@@ -16,32 +16,32 @@ describe('createBuiltinMcps', () => {
     const names = Object.keys(mcps);
 
     expect(names.length).toBe(3);
-    expect(names).toContain('websearch');
+    expect(names).toContain('linkup');
     expect(names).toContain('context7');
     expect(names).toContain('grep_app');
   });
 
   test('excludes single disabled MCP', () => {
-    const mcps = createBuiltinMcps(['websearch']);
+    const mcps = createBuiltinMcps(['linkup']);
     const names = Object.keys(mcps);
 
-    expect(names).not.toContain('websearch');
+    expect(names).not.toContain('linkup');
     expect(names).toContain('context7');
     expect(names).toContain('grep_app');
   });
 
   test('excludes multiple disabled MCPs', () => {
-    const mcps = createBuiltinMcps(['websearch', 'grep_app']);
+    const mcps = createBuiltinMcps(['linkup', 'grep_app']);
     const names = Object.keys(mcps);
 
-    expect(names).not.toContain('websearch');
+    expect(names).not.toContain('linkup');
     expect(names).not.toContain('grep_app');
     expect(names).toContain('context7');
     expect(names.length).toBe(1);
   });
 
   test('excludes all MCPs when all disabled', () => {
-    const mcps = createBuiltinMcps(['websearch', 'context7', 'grep_app']);
+    const mcps = createBuiltinMcps(['linkup', 'context7', 'grep_app']);
     const names = Object.keys(mcps);
 
     expect(names.length).toBe(0);
@@ -53,7 +53,7 @@ describe('createBuiltinMcps', () => {
 
     // All valid MCPs should still be present
     expect(names.length).toBe(3);
-    expect(names).toContain('websearch');
+    expect(names).toContain('linkup');
     expect(names).toContain('context7');
     expect(names).toContain('grep_app');
   });
@@ -70,12 +70,12 @@ describe('createBuiltinMcps', () => {
     }
   });
 
-  test('websearch MCP has correct structure', () => {
+  test('linkup MCP has correct structure', () => {
     const mcps = createBuiltinMcps();
-    const websearch = mcps.websearch;
+    const linkup = mcps.linkup;
 
-    expect(websearch).toBeDefined();
-    expect('url' in websearch).toBe(true);
+    expect(linkup).toBeDefined();
+    expect('url' in linkup).toBe(true);
   });
 
   test('context7 MCP has correct structure', () => {

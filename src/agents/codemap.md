@@ -56,7 +56,7 @@ All agents follow a consistent factory pattern:
 | Agent | Primary Focus | Tools | Constraints | Temperature |
 |-------|--------------|-------|-------------|-------------|
 | Explorer | Codebase search | grep, glob, ast_grep_search | Read-only, parallel | 0.1 |
-| Librarian | External docs | context7, grep_app, websearch | Evidence-based | 0.1 |
+| Librarian | External docs | context7, grep_app, linkup | Evidence-based | 0.1 |
 | Oracle | Architecture | Analysis tools | Read-only, advisory | 0.1 |
 | Designer | UI/UX | Tailwind, CSS | Visual excellence | 0.7 |
 | Fixer | Implementation | Edit/write tools | No research/delegation | 0.2 |

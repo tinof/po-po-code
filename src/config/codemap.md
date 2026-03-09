@@ -74,7 +74,7 @@ TmuxConfig
 - `TmuxLayout`: Layout enum (`main-horizontal`, `main-vertical`, `tiled`, `even-horizontal`, `even-vertical`)
 - `Preset`: Named agent configuration presets
 - `AgentName`: Union type of all agent names
-- `McpName`: Union type of available MCPs (`'websearch'`, `'context7'`, `'grep_app'`)
+- `McpName`: Union type of available MCPs (`'linkup'`, `'context7'`, `'grep_app'`)
 - `BackgroundTaskConfig`: Background task concurrency settings
 
 **Exported Functions**
@@ -217,10 +217,10 @@ deepMerge(base, override)
 
 | Agent      | Default MCPs                          |
 |------------|---------------------------------------|
-| orchestrator | `['websearch']`                       |
+| orchestrator | `[]`                                  |
 | designer    | `[]`                                  |
 | oracle      | `[]`                                  |
-| librarian   | `['websearch', 'context7', 'grep_app']` |
+| librarian   | `['linkup', 'context7', 'grep_app']` |
 | explorer    | `[]`                                  |
 | fixer       | `[]`                                  |
 

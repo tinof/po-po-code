@@ -237,17 +237,17 @@ Uses `experimental.session.compacting` to preserve architectural context (codema
   "presets": {
     "default": {
       "orchestrator": {
-        "mcps": ["*"],
+        "mcps": [],
         "skills": ["*"]
       },
       "explorer": {
         "mcps": ["serena", "morph-mcp"]
       },
       "oracle": {
-        "mcps": ["serena", "websearch"]
+        "mcps": ["serena", "linkup"]
       },
       "librarian": {
-        "mcps": ["websearch", "context7", "grep_app"]
+        "mcps": ["linkup", "context7", "grep_app"]
       },
       "fixer": {
         "mcps": ["serena", "morph-mcp"]

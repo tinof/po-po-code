@@ -4,13 +4,13 @@
 
 ## Responsibility
 
-- Define and expose the built-in MCP endpoints (websearch, context7, grep.app) alongside the shared type aliases so the application can treat remote and local MCPs uniformly (`src/mcp/index.ts`, `src/mcp/types.ts`).
+- Define and expose the built-in MCP endpoints (linkup, context7, grep.app) alongside the shared type aliases so the application can treat remote and local MCPs uniformly (`src/mcp/index.ts`, `src/mcp/types.ts`).
 - Provide a single entry point (`createBuiltinMcps`) for instantiating the default connectors while honoring feature flags/disabled lists.
 
 ## Design
 
 - `types.ts` defines the discriminated union `McpConfig` with `RemoteMcpConfig` and `LocalMcpConfig`, keeping the shape of every connector explicit and easy to validate at compile time.
-- Each service file exports a `RemoteMcpConfig` literal that points at the remote URL and optionally supplies headers derived from the corresponding environment variable to avoid leaking secrets (`websearch.ts`, `context7.ts`, `grep-app.ts`).
+- Each service file exports a `RemoteMcpConfig` literal that points at the remote URL and optionally supplies headers derived from the corresponding environment variable to avoid leaking secrets (`linkup.ts`, `context7.ts`, `grep-app.ts`).
 - `index.ts` aggregates the built-in configs in a `Record<McpName, McpConfig>` and exposes helpers/types for external consumers, keeping the set of hard-coded MCPs centralized.
 
 ## Flow

@@ -136,9 +136,7 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
           (opencodeConfig.provider as Record<string, unknown>) ?? {};
         const configuredProviders = Object.keys(providerConfig);
 
-        for (const [agentName, modelArray] of Object.entries(
-          modelArrayMap,
-        )) {
+        for (const [agentName, modelArray] of Object.entries(modelArrayMap)) {
           let resolved = false;
           for (const modelEntry of modelArray) {
             const slashIdx = modelEntry.id.indexOf('/');
@@ -275,15 +273,36 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
     // Inject phase reminder + project context before sending to API (doesn't show in UI)
     'experimental.chat.messages.transform': async (
       input: Record<string, never>,
-      output: { messages: Array<{ info: { role: string; agent?: string }; parts: Array<{ type: string; text?: string }> }> },
+      output: {
+        messages: Array<{
+          info: { role: string; agent?: string };
+          parts: Array<{ type: string; text?: string }>;
+        }>;
+      },
     ) => {
       // Chain: project context first (session start), then phase reminder (every turn)
-      await projectContextHook['experimental.chat.messages.transform'](input, output as any);
-      await phaseReminderHook['experimental.chat.messages.transform'](input, output as any);
+      await projectContextHook['experimental.chat.messages.transform'](
+        input,
+        output as any,
+      );
+      await phaseReminderHook['experimental.chat.messages.transform'](
+        input,
+        output as any,
+      );
     },
 
-    // Post-tool hooks: retry guidance for delegation errors + post-read nudge
+    // Post-tool hooks: retry guidance for delegation errors + post-read nudge + activity tracking
     'tool.execute.after': async (input, output) => {
+      // Track tool activity on background task sessions for stall detection
+      const toolInput = input as {
+        tool: string;
+        sessionID?: string;
+        callID?: string;
+      };
+      if (toolInput.sessionID) {
+        backgroundManager.handleToolActivity(toolInput.sessionID);
+      }
+
       await delegateTaskRetryHook['tool.execute.after'](
         input as { tool: string },
         output as { output: unknown },

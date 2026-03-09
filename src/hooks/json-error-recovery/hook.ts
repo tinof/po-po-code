@@ -7,7 +7,8 @@ export const JSON_ERROR_TOOL_EXCLUDE_LIST = [
   'grep',
   'webfetch',
   'grep_app_searchgithub',
-  'websearch_web_search_exa',
+  'linkup_linkup-search',
+  'linkup_linkup-fetch',
 ] as const;
 
 export const JSON_ERROR_PATTERNS = [

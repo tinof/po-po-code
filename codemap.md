@@ -111,7 +111,7 @@ Return plugin object with:
    - Background task orchestration
 
 5. **MCP Integration** (`src/mcp/`)
-   - Built-in remote MCPs (websearch, context7, grep.app)
+   - Built-in remote MCPs (linkup, context7, grep.app)
    - Type-safe configuration
    - Disabled MCP filtering
 
