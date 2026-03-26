@@ -1,10 +1,8 @@
 import { existsSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
-export function getConfigDir(): string {
-  // Keep this aligned with OpenCode itself and the plugin config loader:
-  // base dir is $XDG_CONFIG_HOME (if set) else ~/.config, and OpenCode config lives under /opencode.
+function getDefaultOpenCodeConfigDir(): string {
   const userConfigDir = process.env.XDG_CONFIG_HOME
     ? process.env.XDG_CONFIG_HOME
     : join(homedir(), '.config');
@@ -12,17 +10,39 @@ export function getConfigDir(): string {
   return join(userConfigDir, 'opencode');
 }
 
+function getCustomOpenCodeConfigDir(): string | undefined {
+  const configDir = process.env.OPENCODE_CONFIG_DIR?.trim();
+  return configDir || undefined;
+}
+
+/**
+ * Get the OpenCode plugin config directory.
+ *
+ * Resolution order:
+ * 1. OPENCODE_CONFIG_DIR (custom OpenCode directory)
+ * 2. XDG_CONFIG_HOME/opencode
+ * 3. ~/.config/opencode
+ */
+export function getConfigDir(): string {
+  const customConfigDir = getCustomOpenCodeConfigDir();
+  if (customConfigDir) {
+    return customConfigDir;
+  }
+
+  return getDefaultOpenCodeConfigDir();
+}
+
 export function getOpenCodeConfigPaths(): string[] {
-  const configDir = getConfigDir();
+  const configDir = getDefaultOpenCodeConfigDir();
   return [join(configDir, 'opencode.json'), join(configDir, 'opencode.jsonc')];
 }
 
 export function getConfigJson(): string {
-  return join(getConfigDir(), 'opencode.json');
+  return getOpenCodeConfigPaths()[0];
 }
 
 export function getConfigJsonc(): string {
-  return join(getConfigDir(), 'opencode.jsonc');
+  return getOpenCodeConfigPaths()[1];
 }
 
 export function getLiteConfig(): string {
@@ -55,6 +75,16 @@ export function getExistingConfigPath(): string {
 
 export function ensureConfigDir(): void {
   const configDir = getConfigDir();
+  if (!existsSync(configDir)) {
+    mkdirSync(configDir, { recursive: true });
+  }
+}
+
+/**
+ * Ensure the directory for OpenCode's main config file exists.
+ */
+export function ensureOpenCodeConfigDir(): void {
+  const configDir = dirname(getConfigJson());
   if (!existsSync(configDir)) {
     mkdirSync(configDir, { recursive: true });
   }

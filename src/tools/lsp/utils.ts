@@ -9,6 +9,7 @@ import {
 } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { log } from '../../utils/logger';
 import type { LSPClient } from './client';
 import { lspManager } from './client';
 import { findServerForExtension } from './config';
@@ -17,11 +18,35 @@ import type {
   Diagnostic,
   Location,
   LocationLink,
+  ResolvedServer,
   ServerLookupResult,
   TextEdit,
   WorkspaceEdit,
 } from './types';
 
+/**
+ * Find the project root for a specific LSP server using its root function.
+ * Mirrors OpenCode core's RootFunction approach.
+ *
+ * @param filePath - The file to find the root for
+ * @param server - The LSP server config with root function
+ * @returns The project root directory, or file's directory if no root function
+ */
+export function findServerProjectRoot(
+  filePath: string,
+  server: ResolvedServer,
+): string {
+  // Use the server's root function if available, otherwise use file's directory
+  if (server.root) {
+    return server.root(filePath) ?? dirname(resolve(filePath));
+  }
+  return dirname(resolve(filePath));
+}
+
+/**
+ * Legacy function for backward compatibility.
+ * @deprecated Use findServerProjectRoot with server-specific patterns instead.
+ */
 export function findWorkspaceRoot(filePath: string): string {
   let dir = resolve(filePath);
 
@@ -84,24 +109,46 @@ export async function withLspClient<T>(
   const result = findServerForExtension(ext);
 
   if (result.status !== 'found') {
+    log('[lsp] withLspClient: server not found', {
+      filePath: absPath,
+      extension: ext,
+    });
     throw new Error(formatServerLookupError(result));
   }
 
   const server = result.server;
-  const root = findWorkspaceRoot(absPath);
+  // Use server-specific root detection instead of generic workspace root
+  // Fall back to file's directory if no root patterns match
+  const root = findServerProjectRoot(absPath, server) ?? dirname(absPath);
+
+  log('[lsp] withLspClient: acquiring client', {
+    filePath: absPath,
+    server: server.id,
+    root,
+  });
+
   const client = await lspManager.getClient(root, server);
 
   try {
-    return await fn(client);
+    const result = await fn(client);
+    log('[lsp] withLspClient: operation complete', { server: server.id });
+    return result;
   } catch (e) {
     if (e instanceof Error && e.message.includes('timeout')) {
       const isInitializing = lspManager.isServerInitializing(root, server.id);
       if (isInitializing) {
+        log('[lsp] withLspClient: timeout during init', {
+          server: server.id,
+        });
         throw new Error(
           `LSP server is still initializing. Please retry in a few seconds.`,
         );
       }
     }
+    log('[lsp] withLspClient: operation failed', {
+      server: server.id,
+      error: String(e),
+    });
     throw e;
   } finally {
     lspManager.releaseClient(root, server.id);
@@ -221,6 +268,7 @@ export interface ApplyResult {
 
 export function applyWorkspaceEdit(edit: WorkspaceEdit | null): ApplyResult {
   if (!edit) {
+    log('[lsp] applyWorkspaceEdit: no edit provided');
     return {
       success: false,
       filesModified: [],
@@ -228,6 +276,11 @@ export function applyWorkspaceEdit(edit: WorkspaceEdit | null): ApplyResult {
       errors: ['No edit provided'],
     };
   }
+
+  const changeCount =
+    (edit.changes ? Object.keys(edit.changes).length : 0) +
+    (edit.documentChanges ? edit.documentChanges.length : 0);
+  log('[lsp] applyWorkspaceEdit: applying', { changeCount });
 
   const result: ApplyResult = {
     success: true,
@@ -299,6 +352,13 @@ export function applyWorkspaceEdit(edit: WorkspaceEdit | null): ApplyResult {
       }
     }
   }
+
+  log('[lsp] applyWorkspaceEdit: complete', {
+    success: result.success,
+    filesModified: result.filesModified.length,
+    totalEdits: result.totalEdits,
+    errors: result.errors.length,
+  });
 
   return result;
 }

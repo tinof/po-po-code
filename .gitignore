@@ -42,6 +42,7 @@ local
 .hive/
 .opencode/
 .claude/
+.serena/
 .ignore
 opencode
 oh-my-opencode
@@ -49,9 +50,6 @@ opencode.jsonc
 
 # AI Memory
 .aim/
-
-# Serena MCP local cache
-.serena/
 
 # Planning docs (not for commit)
 TIMEOUT_PLAN.md

@@ -5,21 +5,23 @@ import { loadPluginConfig, type TmuxConfig } from './config';
 import { parseList } from './config/agent-mcps';
 import {
   createAutoUpdateCheckerHook,
+  createChatHeadersHook,
   createDelegateTaskRetryHook,
   createJsonErrorRecoveryHook,
   createPostEditNudgeHook,
   createProjectContextHook,
+  ForegroundFallbackManager,
 } from './hooks';
 import { createBuiltinMcps } from './mcp';
 import {
   ast_grep_replace,
   ast_grep_search,
   createBackgroundTools,
-  grep,
   lsp_diagnostics,
   lsp_find_references,
   lsp_goto_definition,
   lsp_rename,
+  setUserLspConfig,
 } from './tools';
 import { startTmuxCheck } from './utils';
 import { log } from './utils/logger';
@@ -40,6 +42,33 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
       modelArrayMap[agentDef.name] = agentDef._modelArray;
     }
   }
+  // Build runtime fallback chains for all foreground agents.
+  // Each chain is an ordered list of model strings to try when the current
+  // model is rate-limited. Seeds from _modelArray entries (when the user
+  // configures model as an array), then appends fallback.chains entries.
+  const runtimeChains: Record<string, string[]> = {};
+  for (const agentDef of agentDefs) {
+    if (agentDef._modelArray?.length) {
+      runtimeChains[agentDef.name] = agentDef._modelArray.map((m) => m.id);
+    }
+  }
+  if (config.fallback?.enabled !== false) {
+    const chains =
+      (config.fallback?.chains as Record<string, string[] | undefined>) ?? {};
+    for (const [agentName, chainModels] of Object.entries(chains)) {
+      if (!chainModels?.length) continue;
+      const existing = runtimeChains[agentName] ?? [];
+      const seen = new Set(existing);
+      for (const m of chainModels) {
+        if (!seen.has(m)) {
+          seen.add(m);
+          existing.push(m);
+        }
+      }
+      runtimeChains[agentName] = existing;
+    }
+  }
+
   // Parse tmux config with defaults
   const tmuxConfig: TmuxConfig = {
     enabled: config.tmux?.enabled ?? false,
@@ -85,11 +114,20 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
     (typeof projectContextHook)['experimental.chat.messages.transform']
   >[1];
 
+  const chatHeadersHook = createChatHeadersHook(ctx);
+
   // Initialize delegate-task retry guidance hook
   const delegateTaskRetryHook = createDelegateTaskRetryHook(ctx);
 
   // Initialize JSON parse error recovery hook
   const jsonErrorRecoveryHook = createJsonErrorRecoveryHook(ctx);
+
+  // Initialize foreground fallback manager for runtime model switching
+  const foregroundFallback = new ForegroundFallbackManager(
+    ctx.client,
+    runtimeChains,
+    config.fallback?.enabled !== false && Object.keys(runtimeChains).length > 0,
+  );
 
   return {
     name: 'oh-my-opencode-slim',
@@ -102,7 +140,6 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
       lsp_find_references,
       lsp_diagnostics,
       lsp_rename,
-      grep,
       ast_grep_search,
       ast_grep_replace,
     },
@@ -110,59 +147,119 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
     mcp: mcps,
 
     config: async (opencodeConfig: Record<string, unknown>) => {
-      (opencodeConfig as { default_agent?: string }).default_agent =
-        'orchestrator';
+      // Set user's lsp config from opencode.json for LSP tools
+      const lspConfig = opencodeConfig.lsp as
+        | Record<string, unknown>
+        | undefined;
+      setUserLspConfig(lspConfig);
 
-      // Merge Agent configs
+      // Only set default_agent if not already configured by the user
+      // and the plugin config doesn't explicitly disable this behavior
+      if (
+        config.setDefaultAgent !== false &&
+        !(opencodeConfig as { default_agent?: string }).default_agent
+      ) {
+        (opencodeConfig as { default_agent?: string }).default_agent =
+          'orchestrator';
+      }
+
+      // Merge Agent configs — per-agent shallow merge to preserve
+      // user-supplied fields (e.g. tools, permission) from opencode.json
       if (!opencodeConfig.agent) {
         opencodeConfig.agent = { ...agents };
       } else {
-        Object.assign(opencodeConfig.agent, agents);
+        for (const [name, pluginAgent] of Object.entries(agents)) {
+          const existing = (opencodeConfig.agent as Record<string, unknown>)[
+            name
+          ] as Record<string, unknown> | undefined;
+          if (existing) {
+            // Shallow merge: plugin defaults first, user overrides win
+            (opencodeConfig.agent as Record<string, unknown>)[name] = {
+              ...pluginAgent,
+              ...existing,
+            };
+          } else {
+            (opencodeConfig.agent as Record<string, unknown>)[name] = {
+              ...pluginAgent,
+            };
+          }
+        }
       }
       const configAgent = opencodeConfig.agent as Record<string, unknown>;
 
-      // Runtime model fallback: resolve model arrays to the first
-      // provider/model whose provider is configured in OpenCode.
-      // NOTE: We cannot call ctx.client.provider.list() here because
-      // the HTTP server is still initializing (causes deadlock).
-      // Instead, inspect opencodeConfig.provider directly.
-      if (Object.keys(modelArrayMap).length > 0) {
-        const providerConfig =
-          (opencodeConfig.provider as Record<string, unknown>) ?? {};
-        const configuredProviders = Object.keys(providerConfig);
+      // Model resolution for foreground agents: combine _modelArray entries
+      // with fallback.chains config, then pick the first model in the
+      // effective array for startup-time selection.
+      //
+      // Runtime failover on API errors (e.g. rate limits mid-conversation)
+      // is handled separately by ForegroundFallbackManager via the event hook.
+      const fallbackChainsEnabled = config.fallback?.enabled !== false;
+      const fallbackChains = fallbackChainsEnabled
+        ? ((config.fallback?.chains as Record<string, string[] | undefined>) ??
+          {})
+        : {};
 
-        for (const [agentName, modelArray] of Object.entries(modelArrayMap)) {
-          let resolved = false;
-          for (const modelEntry of modelArray) {
-            const slashIdx = modelEntry.id.indexOf('/');
-            if (slashIdx === -1) continue;
-            const providerID = modelEntry.id.slice(0, slashIdx);
-            if (configuredProviders.includes(providerID)) {
-              const entry = configAgent[agentName] as
-                | Record<string, unknown>
-                | undefined;
-              if (entry) {
-                entry.model = modelEntry.id;
-                if (modelEntry.variant) {
-                  entry.variant = modelEntry.variant;
-                }
-              }
-              log('[plugin] resolved model fallback', {
-                agent: agentName,
-                model: modelEntry.id,
-                variant: modelEntry.variant,
-              });
-              resolved = true;
-              break;
+      // Build effective model arrays: seed from _modelArray, then append
+      // fallback.chains entries so the resolver considers the full chain
+      // when picking the best available provider at startup.
+      const effectiveArrays: Record<
+        string,
+        Array<{ id: string; variant?: string }>
+      > = {};
+
+      for (const [agentName, models] of Object.entries(modelArrayMap)) {
+        effectiveArrays[agentName] = [...models];
+      }
+
+      for (const [agentName, chainModels] of Object.entries(fallbackChains)) {
+        if (!chainModels || chainModels.length === 0) continue;
+
+        if (!effectiveArrays[agentName]) {
+          const entry = configAgent[agentName] as
+            | Record<string, unknown>
+            | undefined;
+          const currentModel =
+            typeof entry?.model === 'string' ? entry.model : undefined;
+          effectiveArrays[agentName] = currentModel
+            ? [{ id: currentModel }]
+            : [];
+        }
+
+        const seen = new Set(effectiveArrays[agentName].map((m) => m.id));
+        for (const chainModel of chainModels) {
+          if (!seen.has(chainModel)) {
+            seen.add(chainModel);
+            effectiveArrays[agentName].push({ id: chainModel });
+          }
+        }
+      }
+
+      if (Object.keys(effectiveArrays).length > 0) {
+        for (const [agentName, modelArray] of Object.entries(effectiveArrays)) {
+          if (modelArray.length === 0) continue;
+
+          // Use the first model in the effective array.
+          // Not all providers require entries in opencodeConfig.provider —
+          // some are loaded automatically by opencode (e.g. github-copilot,
+          // openrouter). We cannot distinguish these from truly unconfigured
+          // providers at config-hook time, so we cannot gate on the provider
+          // config keys. Runtime failover is handled separately by
+          // ForegroundFallbackManager.
+          const chosen = modelArray[0];
+          const entry = configAgent[agentName] as
+            | Record<string, unknown>
+            | undefined;
+          if (entry) {
+            entry.model = chosen.id;
+            if (chosen.variant) {
+              entry.variant = chosen.variant;
             }
           }
-          // If no provider matched, leave model unset so OpenCode
-          // uses the UI-selected model (fixes #138).
-          if (!resolved) {
-            log('[plugin] no provider match for model array', {
-              agent: agentName,
-            });
-          }
+          log('[plugin] resolved model from array', {
+            agent: agentName,
+            model: chosen.id,
+            variant: chosen.variant,
+          });
         }
       }
 
@@ -219,6 +316,9 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
     },
 
     event: async (input) => {
+      // Runtime model fallback for foreground agents (rate-limit detection)
+      await foregroundFallback.handleEvent(input.event);
+
       // Handle auto-update checking
       await autoUpdateChecker.event(input);
 
@@ -264,6 +364,8 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
         },
       );
     },
+
+    'chat.headers': chatHeadersHook['chat.headers'],
 
     // Inject project context before sending to API (doesn't show in UI)
     'experimental.chat.messages.transform': async (input, output) => {

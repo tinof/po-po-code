@@ -11,7 +11,6 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  addChutesProvider,
   addPluginToOpenCodeConfig,
   detectCurrentConfig,
   disableDefaultAgents,
@@ -29,6 +28,7 @@ describe('config-io', () => {
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), 'opencode-io-test-'));
+    delete process.env.OPENCODE_CONFIG_DIR;
     process.env.XDG_CONFIG_HOME = tmpDir;
   });
 
@@ -120,24 +120,21 @@ describe('config-io', () => {
     expect(saved.plugin.length).toBe(2);
   });
 
-  test('writeLiteConfig writes lite config', () => {
+  test('writeLiteConfig writes lite config with OpenAI preset', () => {
     const litePath = join(tmpDir, 'opencode', 'oh-my-opencode-slim.json');
     paths.ensureConfigDir();
 
     const result = writeLiteConfig({
-      hasKimi: true,
-      hasOpenAI: false,
-      hasAntigravity: false,
-      hasOpencodeZen: false,
       hasTmux: true,
       installSkills: false,
       installCustomSkills: false,
+      reset: false,
     });
     expect(result.success).toBe(true);
 
     const saved = JSON.parse(readFileSync(litePath, 'utf-8'));
-    expect(saved.preset).toBe('kimi');
-    expect(saved.presets.kimi).toBeDefined();
+    expect(saved.preset).toBe('openai');
+    expect(saved.presets.openai).toBeDefined();
     expect(saved.tmux.enabled).toBe(true);
   });
 
@@ -194,37 +191,5 @@ describe('config-io', () => {
     expect(detected.hasCopilot).toBe(true);
     expect(detected.hasZaiPlan).toBe(true);
     expect(detected.hasTmux).toBe(true);
-  });
-
-  test('addChutesProvider keeps OpenCode auth-based chutes flow intact', () => {
-    const configPath = join(tmpDir, 'opencode', 'opencode.json');
-    const litePath = join(tmpDir, 'opencode', 'oh-my-opencode-slim.json');
-    paths.ensureConfigDir();
-
-    writeFileSync(
-      configPath,
-      JSON.stringify({ plugin: ['oh-my-opencode-slim'] }),
-    );
-    writeFileSync(
-      litePath,
-      JSON.stringify({
-        preset: 'chutes',
-        presets: {
-          chutes: {
-            orchestrator: { model: 'chutes/kimi-k2.5' },
-          },
-        },
-      }),
-    );
-
-    const result = addChutesProvider();
-    expect(result.success).toBe(true);
-
-    const saved = JSON.parse(readFileSync(configPath, 'utf-8'));
-    expect(saved.plugin).toContain('oh-my-opencode-slim');
-    expect(saved.provider).toBeUndefined();
-
-    const detected = detectCurrentConfig();
-    expect(detected.hasChutes).toBe(true);
   });
 });

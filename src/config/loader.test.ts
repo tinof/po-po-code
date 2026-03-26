@@ -17,6 +17,7 @@ describe('loadPluginConfig', () => {
     userConfigDir = path.join(tempDir, 'user-config');
     originalEnv = { ...process.env };
     // Isolate from real user config
+    delete process.env.OPENCODE_CONFIG_DIR;
     process.env.XDG_CONFIG_HOME = userConfigDir;
   });
 
@@ -88,37 +89,37 @@ describe('loadPluginConfig', () => {
       JSON.stringify({
         manualPlan: {
           orchestrator: {
-            primary: 'openai/gpt-5.3-codex',
+            primary: 'openai/gpt-5.4',
             fallback1: 'anthropic/claude-opus-4-6',
             fallback2: 'chutes/kimi-k2.5',
             fallback3: 'opencode/gpt-5-nano',
           },
           oracle: {
-            primary: 'openai/gpt-5.3-codex',
+            primary: 'openai/gpt-5.4',
             fallback1: 'anthropic/claude-opus-4-6',
             fallback2: 'chutes/Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8-TEE',
             fallback3: 'opencode/gpt-5-nano',
           },
           designer: {
-            primary: 'openai/gpt-5.3-codex',
+            primary: 'openai/gpt-5.4',
             fallback1: 'anthropic/claude-opus-4-6',
             fallback2: 'chutes/kimi-k2.5',
             fallback3: 'opencode/gpt-5-nano',
           },
           explorer: {
-            primary: 'openai/gpt-5.3-codex',
+            primary: 'openai/gpt-5.4',
             fallback1: 'anthropic/claude-opus-4-6',
             fallback2: 'chutes/kimi-k2.5',
             fallback3: 'opencode/gpt-5-nano',
           },
           librarian: {
-            primary: 'openai/gpt-5.3-codex',
+            primary: 'openai/gpt-5.4',
             fallback1: 'anthropic/claude-opus-4-6',
             fallback2: 'chutes/kimi-k2.5',
             fallback3: 'opencode/gpt-5-nano',
           },
           fixer: {
-            primary: 'openai/gpt-5.3-codex',
+            primary: 'openai/gpt-5.4',
             fallback1: 'anthropic/claude-opus-4-6',
             fallback2: 'chutes/kimi-k2.5',
             fallback3: 'opencode/gpt-5-nano',
@@ -152,6 +153,31 @@ describe('loadPluginConfig', () => {
     );
     expect(loadPluginConfig(projectDir)).toEqual({});
   });
+
+  test('respects OPENCODE_CONFIG_DIR for user config location', () => {
+    const customDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'omc-opencode-config-'),
+    );
+    process.env.OPENCODE_CONFIG_DIR = customDir;
+
+    // Write plugin config in the custom directory
+    fs.writeFileSync(
+      path.join(customDir, 'oh-my-opencode-slim.json'),
+      JSON.stringify({
+        agents: { oracle: { model: 'custom/model-from-opencode-config-dir' } },
+      }),
+    );
+
+    const projectDir = path.join(tempDir, 'project');
+    fs.mkdirSync(projectDir, { recursive: true });
+
+    const config = loadPluginConfig(projectDir);
+    expect(config.agents?.oracle?.model).toBe(
+      'custom/model-from-opencode-config-dir',
+    );
+
+    fs.rmSync(customDir, { recursive: true, force: true });
+  });
 });
 
 describe('deepMerge behavior', () => {
@@ -165,6 +191,7 @@ describe('deepMerge behavior', () => {
     originalEnv = { ...process.env };
 
     // Set XDG_CONFIG_HOME to control user config location
+    delete process.env.OPENCODE_CONFIG_DIR;
     process.env.XDG_CONFIG_HOME = userConfigDir;
   });
 
@@ -350,7 +377,7 @@ describe('deepMerge behavior', () => {
         fallback: {
           timeoutMs: 15000,
           chains: {
-            oracle: ['openai/gpt-5.2-codex', 'opencode/glm-4.7-free'],
+            oracle: ['openai/gpt-5.4', 'opencode/glm-4.7-free'],
           },
         },
       }),
@@ -373,7 +400,7 @@ describe('deepMerge behavior', () => {
     const config = loadPluginConfig(projectDir);
     expect(config.fallback?.timeoutMs).toBe(15000);
     expect(config.fallback?.chains.oracle).toEqual([
-      'openai/gpt-5.2-codex',
+      'openai/gpt-5.4',
       'opencode/glm-4.7-free',
     ]);
     expect(config.fallback?.chains.explorer).toEqual([
@@ -390,14 +417,14 @@ describe('deepMerge behavior', () => {
       JSON.stringify({
         fallback: {
           chains: {
-            writing: ['openai/gpt-5.2-codex'],
+            writing: ['openai/gpt-5.4'],
           },
         },
       }),
     );
 
     const config = loadPluginConfig(projectDir);
-    expect(config.fallback?.chains.writing).toEqual(['openai/gpt-5.2-codex']);
+    expect(config.fallback?.chains.writing).toEqual(['openai/gpt-5.4']);
   });
 });
 
@@ -408,6 +435,7 @@ describe('preset resolution', () => {
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preset-test-'));
     originalEnv = { ...process.env };
+    delete process.env.OPENCODE_CONFIG_DIR;
     process.env.XDG_CONFIG_HOME = path.join(tempDir, 'user-config');
   });
 
@@ -587,6 +615,7 @@ describe('environment variable preset override', () => {
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'env-preset-test-'));
     originalEnv = { ...process.env };
+    delete process.env.OPENCODE_CONFIG_DIR;
     process.env.XDG_CONFIG_HOME = path.join(tempDir, 'user-config');
   });
 
@@ -712,6 +741,7 @@ describe('JSONC config support', () => {
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jsonc-test-'));
     originalEnv = { ...process.env };
+    delete process.env.OPENCODE_CONFIG_DIR;
     process.env.XDG_CONFIG_HOME = path.join(tempDir, 'user-config');
   });
 
@@ -898,6 +928,7 @@ describe('loadAgentPrompt', () => {
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prompt-test-'));
     originalEnv = { ...process.env };
+    delete process.env.OPENCODE_CONFIG_DIR;
     process.env.XDG_CONFIG_HOME = tempDir;
   });
 
@@ -1085,5 +1116,24 @@ describe('loadAgentPrompt', () => {
 
     const result = loadAgentPrompt('xdg-agent');
     expect(result.prompt).toBe('xdg prompt');
+  });
+
+  test('respects OPENCODE_CONFIG_DIR for prompt location', () => {
+    const customDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'omc-prompt-config-'),
+    );
+    process.env.OPENCODE_CONFIG_DIR = customDir;
+
+    const promptsDir = path.join(customDir, 'oh-my-opencode-slim');
+    fs.mkdirSync(promptsDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(promptsDir, 'oracle.md'),
+      'prompt from OPENCODE_CONFIG_DIR dir',
+    );
+
+    const result = loadAgentPrompt('oracle');
+    expect(result.prompt).toBe('prompt from OPENCODE_CONFIG_DIR dir');
+
+    fs.rmSync(customDir, { recursive: true, force: true });
   });
 });

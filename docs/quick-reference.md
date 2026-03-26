@@ -15,29 +15,7 @@ Complete reference for oh-my-opencode-slim configuration and capabilities.
 
 ## Presets
 
-Presets are pre-configured agent model mappings for different provider combinations. The installer generates these automatically based on your available providers, and you can switch between them instantly.
-
-### OpenCode Free Discovery
-
-The installer can discover the latest OpenCode free models by running:
-
-```bash
-opencode models --refresh --verbose
-```
-
-Selection rules:
-- Only free `opencode/*` models are considered.
-- A coding-first primary model is selected for orchestration/strategy workloads.
-- A support model is selected for research/implementation workloads.
-- OpenCode-only mode can assign multiple OpenCode models across agents.
-- Hybrid mode can combine OpenCode free models with OpenAI/Kimi/Antigravity; `designer` remains on the external provider mapping.
-
-Useful flags:
-
-```bash
---opencode-free=yes|no
---opencode-free-model=<id|auto>
-```
+The default installer generates an OpenAI preset. To use alternative providers (Kimi, GitHub Copilot, ZAI Coding Plan), see **[Provider Configurations](provider-configurations.md)** for step-by-step instructions and full config examples.
 
 ### Switching Presets
 
@@ -62,7 +40,7 @@ opencode
 
 The environment variable takes precedence over the config file.
 
-### OpenAI Preset
+### OpenAI Preset (Default)
 
 Uses OpenAI models exclusively:
 
@@ -71,70 +49,58 @@ Uses OpenAI models exclusively:
   "preset": "openai",
   "presets": {
     "openai": {
-      "orchestrator": { "model": "openai/gpt-5.2-codex", "skills": ["*"], "mcps": [] },
-      "oracle": { "model": "openai/gpt-5.2-codex", "variant": "high", "skills": [], "mcps": [] },
-      "librarian": { "model": "openai/gpt-5.1-codex-mini", "variant": "low", "skills": [], "mcps": ["linkup", "context7", "grep_app"] },
-      "explorer": { "model": "openai/gpt-5.1-codex-mini", "variant": "low", "skills": [], "mcps": [] },
-      "designer": { "model": "openai/gpt-5.1-codex-mini", "variant": "medium", "skills": ["agent-browser"], "mcps": [] },
-      "fixer": { "model": "openai/gpt-5.1-codex-mini", "variant": "low", "skills": [], "mcps": [] }
+      "orchestrator": { "model": "openai/gpt-5.4", "skills": ["*"], "mcps": [] },
+      "oracle": { "model": "openai/gpt-5.4", "variant": "high", "skills": [], "mcps": [] },
+      "librarian": { "model": "openai/gpt-5.4-mini", "variant": "low", "skills": [], "mcps": ["linkup", "context7", "grep_app"] },
+      "explorer": { "model": "openai/gpt-5.4-mini", "variant": "low", "skills": [], "mcps": [] },
+      "designer": { "model": "openai/gpt-5.4-mini", "variant": "medium", "skills": ["agent-browser"], "mcps": [] },
+      "fixer": { "model": "openai/gpt-5.4-mini", "variant": "low", "skills": [], "mcps": [] }
     }
   }
 }
 ```
 
-### Google Provider (Antigravity)
+### Other Providers
 
-Access Claude 4.5 and Gemini 3 models through Google's Antigravity infrastructure.
+For Kimi, GitHub Copilot, and ZAI Coding Plan presets, see **[Provider Configurations](provider-configurations.md)**.
 
-**Installation:**
-```bash
-bunx oh-my-opencode-slim install --antigravity=yes --opencode-free=yes --opencode-free-model=auto
-```
+### Fallback / Failover
 
-**Agent Mapping:**
-- Orchestrator: Kimi (if available)
-- Oracle: GPT (if available)
-- Explorer/Librarian/Designer/Fixer: Gemini 3 Flash via Antigravity
-- If OpenCode free mode is enabled, Explorer/Librarian/Fixer may use selected free `opencode/*` support model while `designer` stays on external mapping
+The plugin can fail over from one model to the next when a prompt times out or errors. This is the runtime fallback path used by the background task manager; it is separate from your preset selection.
 
-**Authentication:**
-```bash
-opencode auth login
-# Select "google" provider
-```
+**How it works:**
 
-**Available Models:**
-- `google/antigravity-gemini-3-flash`
-- `google/antigravity-gemini-3.1-pro`
-- `google/antigravity-claude-sonnet-4-5`
-- `google/antigravity-claude-sonnet-4-5-thinking`
-- `google/antigravity-claude-opus-4-5-thinking`
-- `google/gemini-2.5-flash` (Gemini CLI)
-- `google/gemini-2.5-pro` (Gemini CLI)
-- `google/gemini-3-flash-preview` (Gemini CLI)
-- `google/gemini-3.1-pro-preview` (Gemini CLI)
+- Each agent can have a fallback chain under `fallback.chains.<agent>`
+- The active prompt uses the agent's configured model first
+- If that model fails, the manager aborts the session, waits briefly, and tries the next model in the chain
+- Duplicate model IDs are ignored, so the same model is not retried twice
+- If fallback is disabled, the task runs with no failover timeout
 
-### Author's Preset
+**Minimal example:**
 
-Mixed setup combining multiple providers:
-
-```json
+```jsonc
 {
-  "preset": "alvin",
-  "presets": {
-    "alvin": {
-      "orchestrator": { "model": "google/claude-opus-4-5-thinking", "skills": ["*"], "mcps": ["*"] },
-      "oracle": { "model": "openai/gpt-5.2-codex", "variant": "high", "skills": [], "mcps": [] },
-      "librarian": { "model": "google/gemini-3-flash", "variant": "low", "skills": [], "mcps": ["linkup", "context7", "grep_app"] },
-      "explorer": { "model": "cerebras/zai-glm-4.7", "variant": "low", "skills": [], "mcps": [] },
-      "designer": { "model": "google/gemini-3-flash", "variant": "medium", "skills": ["agent-browser"], "mcps": [] },
-      "fixer": { "model": "cerebras/zai-glm-4.7", "variant": "low", "skills": [], "mcps": [] }
+  "fallback": {
+    "enabled": true,
+    "timeoutMs": 15000,
+    "retryDelayMs": 500,
+    "chains": {
+      "orchestrator": [
+        "openai/gpt-5.4",
+        "anthropic/claude-sonnet-4-6",
+        "google/gemini-3.1-pro"
+      ]
     }
   }
 }
 ```
 
-> **Antigravity Provider:** For complete Antigravity setup guide, see [Antigravity Setup](antigravity.md)
+**Important notes:**
+
+- Fallback models must use the `provider/model` format
+- Chains are per agent (`orchestrator`, `oracle`, `designer`, `explorer`, `librarian`, `fixer`)
+- If an agent has no configured chain, only its primary model is used
+- This is documented here because it is easy to miss in the config file
 
 ---
 
@@ -326,8 +292,6 @@ You can disable specific MCP servers globally by adding them to the `disabled_mc
 
 ### Tmux Integration
 
-> ⚠️ **Temporary workaround:** Start OpenCode with `--port` to enable tmux integration. The port must match the `OPENCODE_PORT` environment variable (default: 4096). This is required until the upstream issue is resolved. [opencode#9099](https://github.com/anomalyco/opencode/issues/9099).
-
 **Watch your agents work in real-time.** When the Orchestrator launches sub-agents or initiates background tasks, new tmux panes automatically spawn showing each agent's live progress. No more waiting in the dark.
 
 #### Quick Setup
@@ -347,7 +311,7 @@ You can disable specific MCP servers globally by adding them to the `disabled_mc
 2. **Run OpenCode inside tmux**:
     ```bash
     tmux
-    opencode --port 4096
+    opencode
     ```
 
 #### Layout Options
@@ -468,14 +432,14 @@ The plugin supports **JSONC** format for configuration files, allowing you to:
 ```jsonc
 {
   // Use preset for development
-  "preset": "dev",
+  "preset": "openai",
 
   /* Presets definition - customize agent models here */
   "presets": {
-    "dev": {
+    "openai": {
       // Fast models for quick iteration
-      "oracle": { "model": "google/gemini-3-flash" },
-      "explorer": { "model": "google/gemini-3-flash" },
+      "oracle": { "model": "openai/gpt-5.4" },
+      "explorer": { "model": "openai/gpt-5.4-mini" },
     },
   },
 
@@ -488,15 +452,15 @@ The plugin supports **JSONC** format for configuration files, allowing you to:
 
 ### Plugin Config (`oh-my-opencode-slim.json` or `oh-my-opencode-slim.jsonc`)
 
-The installer generates this file based on your providers. You can manually customize it to mix and match models. See the [Presets](#presets) section for detailed configuration options.
+The installer generates this file with the OpenAI preset by default. You can manually customize it to mix and match models from any provider. See [Provider Configurations](provider-configurations.md) for examples.
 
 #### Option Reference
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `preset` | string | - | Name of the preset to use (e.g., `"openai"`, `"antigravity"`) |
+| `preset` | string | - | Name of the preset to use (e.g., `"openai"`, `"kimi"`) |
 | `presets` | object | - | Named preset configurations containing agent mappings |
-| `presets.<name>.<agent>.model` | string | - | Model ID for the agent (e.g., `"google/claude-opus-4-5-thinking"`) |
+| `presets.<name>.<agent>.model` | string | - | Model ID for the agent (e.g., `"openai/gpt-5.4"`) |
 | `presets.<name>.<agent>.temperature` | number | - | Temperature setting (0-2) for the agent |
 | `presets.<name>.<agent>.variant` | string | - | Agent variant for reasoning effort (e.g., `"low"`, `"medium"`, `"high"`) |
 | `presets.<name>.<agent>.skills` | string[] | - | Array of skill names the agent can use (`"*"` for all, `"!item"` to exclude) |
