@@ -18,6 +18,7 @@ import type { BackgroundTaskConfig, PluginConfig } from '../config';
 import {
   FALLBACK_FAILOVER_TIMEOUT_MS,
   SUBAGENT_DELEGATION_RULES,
+  TMUX_SPAWN_DELAY_MS,
 } from '../config';
 import type { TmuxConfig } from '../config/schema';
 import {
@@ -26,34 +27,14 @@ import {
   resolveAgentVariant,
 } from '../utils';
 import { log } from '../utils/logger';
-
-type PromptBody = {
-  messageID?: string;
-  model?: { providerID: string; modelID: string };
-  agent?: string;
-  noReply?: boolean;
-  system?: string;
-  tools?: { [key: string]: boolean };
-  parts: Array<{ type: 'text'; text: string }>;
-  variant?: string;
-};
+import {
+  type PromptBody,
+  parseModelReference,
+  promptWithTimeout,
+} from '../utils/session';
+import { SubagentDepthTracker } from './subagent-depth';
 
 type OpencodeClient = PluginInput['client'];
-
-function parseModelReference(model: string): {
-  providerID: string;
-  modelID: string;
-} | null {
-  const slashIndex = model.indexOf('/');
-  if (slashIndex <= 0 || slashIndex >= model.length - 1) {
-    return null;
-  }
-
-  return {
-    providerID: model.slice(0, slashIndex),
-    modelID: model.slice(slashIndex + 1),
-  };
-}
 
 /**
  * Represents a background task running in an isolated session.
@@ -100,6 +81,7 @@ export class BackgroundTaskManager {
   private tasksBySessionId = new Map<string, string>();
   // Track which agent type owns each session for delegation permission checks
   private agentBySessionId = new Map<string, string>();
+  private depthTracker: SubagentDepthTracker;
   private client: OpencodeClient;
   private directory: string;
   private tmuxEnabled: boolean;
@@ -147,6 +129,7 @@ export class BackgroundTaskManager {
       maxConcurrentStarts: 10,
     };
     this.maxConcurrentStarts = this.backgroundConfig.maxConcurrentStarts;
+    this.depthTracker = new SubagentDepthTracker();
   }
 
   /**
@@ -284,46 +267,6 @@ export class BackgroundTaskManager {
     return chain;
   }
 
-  private async promptWithTimeout(
-    args: Parameters<OpencodeClient['session']['prompt']>[0],
-    timeoutMs: number,
-  ): Promise<void> {
-    // No timeout when fallback disabled (timeoutMs = 0)
-    if (timeoutMs <= 0) {
-      await this.client.session.prompt(args);
-      return;
-    }
-
-    const sessionId = args.path.id;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
-    try {
-      // Attach a no-op .catch() so that when the timeout fires and
-      // session.abort() causes the prompt to reject after the race has
-      // already settled, the late rejection does not become unhandled
-      // (which would crash the process in Node ≥15 / Bun).
-      const promptPromise = this.client.session.prompt(args);
-      promptPromise.catch(() => {});
-
-      await Promise.race([
-        promptPromise,
-        new Promise<never>((_, reject) => {
-          timer = setTimeout(() => {
-            // Abort the running prompt so the session is no longer busy.
-            // Without this, session.prompt() continues running server-side
-            // and blocks subsequent fallback attempts on the same session.
-            this.client.session
-              .abort({ path: { id: sessionId } })
-              .catch(() => {});
-            reject(new Error(`Prompt timed out after ${timeoutMs}ms`));
-          }, timeoutMs);
-        }),
-      ]);
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
   /**
    * Calculate tool permissions for a spawned agent based on its own delegation rules.
    * Agents that cannot delegate (leaf nodes) get delegation tools disabled entirely,
@@ -364,6 +307,18 @@ export class BackgroundTaskManager {
     }
 
     try {
+      // Check subagent spawn depth BEFORE creating session
+      const parentDepth = this.depthTracker.getDepth(task.parentSessionId);
+      if (parentDepth + 1 > this.depthTracker.maxDepth) {
+        log('[background-manager] spawn blocked: max depth exceeded', {
+          parentSessionId: task.parentSessionId,
+          parentDepth,
+          maxDepth: this.depthTracker.maxDepth,
+        });
+        this.completeTask(task, 'failed', 'Subagent depth exceeded');
+        return;
+      }
+
       // Create session
       const session = await this.client.session.create({
         body: {
@@ -384,9 +339,12 @@ export class BackgroundTaskManager {
       task.status = 'running';
       task.lastActivityAt = new Date();
 
+      // Register depth after session creation succeeds
+      this.depthTracker.registerChild(task.parentSessionId, session.data.id);
+
       // Give TmuxSessionManager time to spawn the pane
       if (this.tmuxEnabled) {
-        await new Promise((r) => setTimeout(r, 500));
+        await new Promise((r) => setTimeout(r, TMUX_SPAWN_DELAY_MS));
       }
 
       // Calculate tool permissions based on the spawned agent's own delegation rules
@@ -439,7 +397,8 @@ export class BackgroundTaskManager {
             );
           }
 
-          await this.promptWithTimeout(
+          await promptWithTimeout(
+            this.client,
             {
               path: { id: sessionId },
               body,
@@ -530,6 +489,9 @@ export class BackgroundTaskManager {
 
     const sessionId = event.properties?.info?.id ?? event.properties?.sessionID;
     if (!sessionId) return;
+
+    // Clean up depth tracker
+    this.depthTracker.cleanup(sessionId);
 
     const taskId = this.tasksBySessionId.get(sessionId);
     if (!taskId) return;
@@ -896,6 +858,13 @@ export class BackgroundTaskManager {
   }
 
   /**
+   * Get the depth tracker for external use (e.g., council manager).
+   */
+  getDepthTracker(): SubagentDepthTracker {
+    return this.depthTracker;
+  }
+
+  /**
    * Clean up all tasks.
    */
   cleanup(): void {
@@ -905,5 +874,6 @@ export class BackgroundTaskManager {
     this.tasks.clear();
     this.tasksBySessionId.clear();
     this.agentBySessionId.clear();
+    this.depthTracker.cleanupAll();
   }
 }
