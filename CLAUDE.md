@@ -43,7 +43,7 @@ bun run dev         # build then launch opencode
 - Per-agent MCP access configured in `src/config/agent-mcps.ts`
 
 **Hooks** (`src/hooks/`)
-- Auto-update checker, post-edit LSP nudge, post-warpgrep structural nudge
+- Auto-update checker, post-edit LSP nudge
 
 **Background tasks** (`src/background/`)
 - Fire-and-forget sessions with optional tmux pane visualization

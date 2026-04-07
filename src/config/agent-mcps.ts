@@ -10,10 +10,10 @@ import {
 export const DEFAULT_AGENT_MCPS: Record<AgentName, string[]> = {
   orchestrator: ['*'],
   designer: [],
-  oracle: [],
+  oracle: ['serena', 'linkup', 'context7'],
   librarian: ['linkup', 'context7', 'grep_app'],
-  explorer: [],
-  fixer: [],
+  explorer: ['serena', 'morph-mcp'],
+  fixer: ['morph-mcp'],
   council: [],
   councillor: [],
   'council-master': [],

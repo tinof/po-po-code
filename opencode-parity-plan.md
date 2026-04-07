@@ -73,8 +73,7 @@ read_only: true     # safe default for exploration; disable for editing
 |------|---------|-------------|
 | `find_symbol` | Locate any function/class/variable by name | Entry point discovery |
 | `find_referencing_symbols` | Find all callers of a symbol | Trace who calls what |
-| `get_code_map` | Hierarchical structure of a file/module | Architecture overview |
-| `get_call_hierarchy` | Full call chain from a symbol | Execution path tracing |
+| `get_symbols_overview` | Hierarchical structure of a file/module | Architecture overview |
 | `search_for_pattern` | Regex search with LSP context | Targeted structural search |
 
 ---
@@ -136,11 +135,11 @@ This three-phase workflow makes explicit what Claude Code's Explore sub-agent do
 
 ## 1.2 Plugin Modifications
 
-### Explorer Agent — Three-Phase Workflow
+### Explorer Agent — Broad-to-Narrow Search
 
-**File:** `src/agents/explorer.ts` — **Rewritten**
+**File:** `src/agents/explorer.ts` — **Updated**
 
-The Explorer prompt encodes the three-phase workflow (WarpGrep → Serena → read), an anti-bias protocol that prevents assuming architecture from file names or log output, and a structured output format. Falls back to `ast_grep_search` + `grep` when Serena is unavailable.
+The Explorer prompt describes a broad-to-narrow approach: start with semantic search (WarpGrep) when scope is uncertain, use Serena for structural tracing (references, definitions, symbol maps), and fall back to grep/ast_grep_search when those tools are unavailable. The three-phase workflow in the diagram above is illustrative; the prompt guides the model to apply tools adaptively rather than rigidly.
 
 ### Orchestrator Delegation Hardening
 
@@ -243,13 +242,13 @@ opencode install @tarquinen/opencode-dcp@latest
         "mcps": ["serena", "morph-mcp"]
       },
       "oracle": {
-        "mcps": ["serena", "linkup"]
+        "mcps": ["serena", "linkup", "context7"]
       },
       "librarian": {
         "mcps": ["linkup", "context7", "grep_app"]
       },
       "fixer": {
-        "mcps": ["serena", "morph-mcp"]
+        "mcps": ["morph-mcp"]
       },
       "designer": {
         "mcps": []

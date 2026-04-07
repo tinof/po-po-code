@@ -23,8 +23,6 @@ export class ZellijMultiplexer implements Multiplexer {
 
   private binaryPath: string | null = null;
   private hasChecked = false;
-  private storedLayout: MultiplexerLayout;
-  private storedMainPaneSize: number;
   private agentTabId: string | null = null;
   private firstPaneId: string | null = null;
   private firstPaneUsed = false;
