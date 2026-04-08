@@ -10,3 +10,4 @@ export {
 export { createJsonErrorRecoveryHook } from './json-error-recovery';
 export { createPostEditNudgeHook } from './post-edit-nudge';
 export { createProjectContextHook } from './project-context';
+export { createTodoContinuationHook } from './todo-continuation';
