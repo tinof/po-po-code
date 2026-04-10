@@ -22,12 +22,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/konstantinosfotiou/oh-my-opencode-slim"
+    "url": "https://github.com/tinof/po-po-code"
   },
   "bugs": {
-    "url": "https://github.com/konstantinosfotiou/oh-my-opencode-slim/issues"
+    "url": "https://github.com/tinof/po-po-code/issues"
   },
-  "homepage": "https://github.com/konstantinosfotiou/oh-my-opencode-slim#readme",
+  "homepage": "https://github.com/tinof/po-po-code#readme",
   "files": [
     "dist",
     "src/skills",
