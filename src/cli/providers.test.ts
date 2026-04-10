@@ -21,8 +21,8 @@ describe('providers', () => {
     expect(agents).toBeDefined();
     expect(agents.orchestrator.model).toBe('openai/gpt-5.4');
     expect(agents.orchestrator.variant).toBeUndefined();
-    expect(agents.fixer.model).toBe('openai/gpt-5.4-mini');
-    expect(agents.fixer.variant).toBe('low');
+    expect(agents.ops.model).toBe('openai/gpt-5.4-mini');
+    expect(agents.ops.variant).toBe('low');
   });
 
   test('generateLiteConfig uses correct OpenAI models', () => {
@@ -38,8 +38,10 @@ describe('providers', () => {
     );
     expect(agents.oracle.model).toBe('openai/gpt-5.4');
     expect(agents.oracle.variant).toBe('high');
-    expect(agents.librarian.model).toBe('openai/gpt-5.4-mini');
-    expect(agents.librarian.variant).toBe('low');
+    expect(agents.browser.model).toBe('openai/gpt-5.4-mini');
+    expect(agents.browser.variant).toBe('low');
+    expect(agents.ops.model).toBe('openai/gpt-5.4-mini');
+    expect(agents.ops.variant).toBe('low');
     expect(agents.explorer.model).toBe('openai/gpt-5.4-mini');
     expect(agents.explorer.variant).toBe('low');
     expect(agents.designer.model).toBe('openai/gpt-5.4-mini');
@@ -69,11 +71,11 @@ describe('providers', () => {
     // Orchestrator should always have '*'
     expect(agents.orchestrator.skills).toEqual(['*']);
 
-    // Designer should have 'agent-browser'
-    expect(agents.designer.skills).toContain('agent-browser');
+    // Browser should have 'agent-browser'
+    expect(agents.browser.skills).toContain('agent-browser');
 
-    // Fixer should have no skills by default (empty recommended list)
-    expect(agents.fixer.skills).toEqual([]);
+    // Ops should have no skills by default
+    expect(agents.ops.skills).toEqual([]);
   });
 
   test('generateLiteConfig includes mcps field', () => {
@@ -86,8 +88,8 @@ describe('providers', () => {
     const agents = (config.presets as any).openai;
     expect(agents.orchestrator.mcps).toBeDefined();
     expect(Array.isArray(agents.orchestrator.mcps)).toBe(true);
-    expect(agents.librarian.mcps).toBeDefined();
-    expect(Array.isArray(agents.librarian.mcps)).toBe(true);
+    expect(agents.explorer.mcps).toBeDefined();
+    expect(Array.isArray(agents.explorer.mcps)).toBe(true);
   });
 
   test('generateLiteConfig openai includes correct mcps', () => {
@@ -99,9 +101,9 @@ describe('providers', () => {
 
     const agents = (config.presets as any).openai;
     expect(agents.orchestrator.mcps).toContain('*');
-    expect(agents.librarian.mcps).toContain('linkup');
-    expect(agents.librarian.mcps).toContain('context7');
-    expect(agents.librarian.mcps).toContain('grep_app');
+    expect(agents.explorer.mcps).toContain('context7');
+    expect(agents.explorer.mcps).toContain('grep_app');
+    expect(agents.browser.mcps).toContain('chrome-devtools');
     expect(agents.designer.mcps).toEqual([]);
   });
 });

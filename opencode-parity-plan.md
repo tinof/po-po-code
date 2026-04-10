@@ -37,7 +37,7 @@ This updated architecture pivots to:
 
 ### Gap 1: Context Flooding vs. Context Firewalls
 **What happens now:** Heavy MCPs (like Chrome DevTools) flood the Orchestrator's context with huge schemas, base64 images, and massive logs, paralyzing Codex 5.3.
-**The Fix:** Rename generic agents to domain experts (`@designer` -> `@browser`, `@fixer` -> `@ops`). Give `@browser` exclusive access to Chrome DevTools. It acts as a firewall, analyzing visual state internally and returning only a text summary to Codex.
+**The Fix:** Add `@browser` for heavy MCPs, rename `@fixer` to `@ops`, and strictly repurpose `@designer` as a UI/UX specialist with exclusive access to heavy design frameworks. This prevents the Orchestrator from loading 50 Chrome tools or massive typography/CSS rule markdown files.
 
 ### Gap 2: LLM Polling vs. Event-Driven Wakeups (The Monitor Tool)
 **What happens now:** The Orchestrator has to write loops to check if a server is up or if a build failed, burning tokens.
@@ -55,13 +55,17 @@ This updated architecture pivots to:
 **What happens now:** Ad-hoc text appending for project context.
 **The Fix:** Universal use of `<system-reminder>` tags for all injected context (memory, git status, monitor alerts).
 
+### Gap 6: Skill-Binding (Context Bloat from Global Skills)
+**What happens now:** Installing a skill globally bloats the Orchestrator's context window with large skill prompts and tool definitions that are only relevant to a specific domain.
+**The Fix:** Skill-Binding Strategy. Bind specific skills exclusively to sub-agents (e.g., `impeccable` to `@designer`). The Orchestrator automates delegation to the sub-agent instead of executing the skill itself, keeping its own context lean.
+
 ---
 
 # Part 3: Forward Roadmap
 
 ## Phase A: Domain Agents & Context Firewalls (High Priority)
-- [ ] Rename `@designer` -> `@browser` in `src/agents/` and update `constants.ts`.
-- [ ] Rename `@fixer` -> `@ops`.
+- [ ] Create `@browser` as a new agent in `src/agents/`, rename `@fixer` -> `@ops`, and update `@designer` to be the exclusive owner of the `impeccable` design skill.
+- [ ] Update `constants.ts`, `SUBAGENT_NAMES`, `DEFAULT_MODELS`, etc. for all three agent changes.
 - [ ] Remove old `designer`/`fixer` keys from `SUBAGENT_NAMES`, `DEFAULT_MODELS`, `SUBAGENT_DELEGATION_RULES`, `ORCHESTRATABLE_AGENTS`, `agent-mcps.ts`, schema, tests, and orchestrator prompt. These are **in-place replacements**, not additions.
 - [ ] Rewrite Orchestrator prompt to enforce the "Context Firewall" rule: "NEVER consume raw screenshots or heavy logs yourself. Delegate to @browser or @explorer to read them and return a dense text summary."
 - [ ] Keep `@explorer`, `@librarian`, `@oracle`, and `@council` unchanged — they already have clear, non-overlapping roles.

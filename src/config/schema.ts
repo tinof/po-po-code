@@ -6,8 +6,8 @@ const FALLBACK_AGENT_NAMES = [
   'oracle',
   'designer',
   'explorer',
-  'librarian',
-  'fixer',
+  'browser',
+  'ops',
 ] as const;
 
 const MANUAL_AGENT_NAMES = [
@@ -15,8 +15,8 @@ const MANUAL_AGENT_NAMES = [
   'oracle',
   'designer',
   'explorer',
-  'librarian',
-  'fixer',
+  'browser',
+  'ops',
 ] as const;
 
 export const ProviderModelIdSchema = z
@@ -54,8 +54,8 @@ export const ManualPlanSchema = z
     oracle: ManualAgentPlanSchema,
     designer: ManualAgentPlanSchema,
     explorer: ManualAgentPlanSchema,
-    librarian: ManualAgentPlanSchema,
-    fixer: ManualAgentPlanSchema,
+    browser: ManualAgentPlanSchema,
+    ops: ManualAgentPlanSchema,
   })
   .strict();
 
@@ -71,8 +71,8 @@ const FallbackChainsSchema = z
     oracle: AgentModelChainSchema.optional(),
     designer: AgentModelChainSchema.optional(),
     explorer: AgentModelChainSchema.optional(),
-    librarian: AgentModelChainSchema.optional(),
-    fixer: AgentModelChainSchema.optional(),
+    browser: AgentModelChainSchema.optional(),
+    ops: AgentModelChainSchema.optional(),
   })
   .catchall(AgentModelChainSchema);
 
@@ -154,7 +154,7 @@ export type McpName = z.infer<typeof McpNameSchema>;
 // Background task configuration
 export const BackgroundTaskConfigSchema = z.object({
   maxConcurrentStarts: z.number().min(1).max(50).default(10),
-  /** Per-agent timeout overrides in ms (e.g. { fixer: 180000 }) */
+  /** Per-agent timeout overrides in ms (e.g. { ops: 180000 }) */
   agentTimeouts: z.record(z.string(), z.number().min(0)).optional(),
   /** Global stall detection threshold in ms (default: 120000 = 2 min) */
   stallTimeoutMs: z.number().min(0).optional(),

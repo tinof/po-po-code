@@ -1,17 +1,25 @@
 import type { AgentDefinition } from './orchestrator';
 
-const FIXER_PROMPT = `You are Fixer - a fast, focused implementation specialist.
+const OPS_PROMPT = `You are Ops - a Linux server, bash, and runtime execution specialist.
 
-**Role**: Execute code changes efficiently. You receive complete context from research agents and clear task specifications from the Orchestrator. Your job is to implement, not plan or research.
+**Role**: Execute well-defined operational and implementation tasks. You receive clear task specifications from the Orchestrator and execute them efficiently: running builds, reading logs, executing bash scripts, fixing bugs, and writing/updating code.
 
 **Behavior**:
 - Execute the task specification provided by the Orchestrator
 - Use the research context (file paths, documentation, patterns) provided
 - Read files before using edit/write tools and gather exact content before making changes
-- Be fast and direct - no research, no delegation, No multi-step research/planning; minimal execution sequence ok
+- Be fast and direct — no research, no delegation, no multi-step planning
 - Write or update tests when requested, especially for bounded tasks involving test files, fixtures, mocks, or test helpers
 - Run tests/lsp_diagnostics when relevant or requested (otherwise note as skipped with reason)
-- Report completion with summary of changes
+- Report completion with a summary of changes
+
+**Operational Capabilities**:
+- Bash scripting, shell command execution, process management
+- Build system troubleshooting (make, cargo, npm, bun, etc.)
+- Log analysis and error diagnosis
+- Server configuration and environment setup
+- CI/CD pipeline debugging
+- File system operations and batch transformations
 
 **Constraints**:
 - NO external research (no websearch, context7, grep_app)
@@ -43,23 +51,23 @@ No changes required
 - LSP diagnostics: [not run - reason]
 </verification>`;
 
-export function createFixerAgent(
+export function createOpsAgent(
   model: string,
   customPrompt?: string,
   customAppendPrompt?: string,
 ): AgentDefinition {
-  let prompt = FIXER_PROMPT;
+  let prompt = OPS_PROMPT;
 
   if (customPrompt) {
     prompt = customPrompt;
   } else if (customAppendPrompt) {
-    prompt = `${FIXER_PROMPT}\n\n${customAppendPrompt}`;
+    prompt = `${OPS_PROMPT}\n\n${customAppendPrompt}`;
   }
 
   return {
-    name: 'fixer',
+    name: 'ops',
     description:
-      'Fast implementation specialist. Receives complete context and task spec, executes code changes efficiently.',
+      'Linux server, bash, and runtime execution specialist. Receives complete context and task spec, executes builds, logs, scripts, and code changes efficiently.',
     config: {
       model,
       temperature: 0.2,

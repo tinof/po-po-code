@@ -79,29 +79,27 @@ describe('agent alias backward compatibility', () => {
   });
 });
 
-describe('fixer agent fallback', () => {
-  test('fixer inherits librarian model when no fixer config provided', () => {
+describe('ops agent', () => {
+  test('ops uses its own model when explicitly configured', () => {
     const config: PluginConfig = {
       agents: {
-        librarian: { model: 'librarian-custom-model' },
+        ops: { model: 'ops-specific-model' },
       },
     };
     const agents = createAgents(config);
-    const fixer = agents.find((a) => a.name === 'fixer');
-    const librarian = agents.find((a) => a.name === 'librarian');
-    expect(fixer?.config.model).toBe(librarian?.config.model);
+    const ops = agents.find((a) => a.name === 'ops');
+    expect(ops?.config.model).toBe('ops-specific-model');
   });
 
-  test('fixer uses its own model when explicitly configured', () => {
+  test('browser uses its own model when explicitly configured', () => {
     const config: PluginConfig = {
       agents: {
-        librarian: { model: 'librarian-model' },
-        fixer: { model: 'fixer-specific-model' },
+        browser: { model: 'browser-specific-model' },
       },
     };
     const agents = createAgents(config);
-    const fixer = agents.find((a) => a.name === 'fixer');
-    expect(fixer?.config.model).toBe('fixer-specific-model');
+    const browser = agents.find((a) => a.name === 'browser');
+    expect(browser?.config.model).toBe('browser-specific-model');
   });
 });
 
@@ -243,10 +241,10 @@ describe('skill permissions', () => {
 describe('isSubagent type guard', () => {
   test('returns true for valid subagent names', () => {
     expect(isSubagent('explorer')).toBe(true);
-    expect(isSubagent('librarian')).toBe(true);
+    expect(isSubagent('browser')).toBe(true);
+    expect(isSubagent('ops')).toBe(true);
     expect(isSubagent('oracle')).toBe(true);
     expect(isSubagent('designer')).toBe(true);
-    expect(isSubagent('fixer')).toBe(true);
   });
 
   test('returns false for orchestrator', () => {
@@ -264,7 +262,8 @@ describe('agent classification', () => {
   test('SUBAGENT_NAMES excludes orchestrator', () => {
     expect(SUBAGENT_NAMES).not.toContain('orchestrator');
     expect(SUBAGENT_NAMES).toContain('explorer');
-    expect(SUBAGENT_NAMES).toContain('fixer');
+    expect(SUBAGENT_NAMES).toContain('ops');
+    expect(SUBAGENT_NAMES).toContain('browser');
   });
 
   test('getAgentConfigs applies correct classification visibility and mode', () => {
@@ -290,14 +289,15 @@ describe('createAgents', () => {
     const agents = createAgents();
     const names = agents.map((a) => a.name);
     expect(names).toContain('orchestrator');
+    expect(names).toContain('browser');
+    expect(names).toContain('ops');
     expect(names).toContain('explorer');
     expect(names).toContain('designer');
     expect(names).toContain('oracle');
-    expect(names).toContain('librarian');
-    expect(names).toContain('fixer');
   });
 
   test('creates exactly 9 agents (1 primary + 8 subagents)', () => {
+    // orchestrator + browser + ops + explorer + oracle + designer + council + councillor + council-master
     const agents = createAgents();
     expect(agents.length).toBe(9);
   });

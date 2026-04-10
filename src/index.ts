@@ -22,6 +22,8 @@ import {
   ast_grep_search,
   createBackgroundTools,
   createCouncilTool,
+  createDelegateTools,
+  createMonitorTool,
   createWebfetchTool,
   lsp_diagnostics,
   lsp_find_references,
@@ -109,6 +111,15 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
     config,
   );
 
+  const delegateTools = createDelegateTools(
+    ctx,
+    backgroundManager,
+    multiplexerConfig,
+    config,
+  );
+
+  const monitorTools = createMonitorTool(ctx);
+
   // Initialize council tools (only when council is configured)
   const councilTools = config.council
     ? createCouncilTool(
@@ -185,6 +196,8 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
 
     tool: {
       ...backgroundTools,
+      ...delegateTools,
+      ...monitorTools,
       ...councilTools,
       webfetch,
       ...todoContinuationHook.tool,

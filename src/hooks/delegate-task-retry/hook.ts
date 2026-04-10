@@ -10,7 +10,9 @@ export function createDelegateTaskRetryHook(_ctx: PluginInput) {
     ): Promise<void> => {
       const toolName = input.tool.toLowerCase();
       const isDelegateTool =
-        toolName === 'task' || toolName === 'background_task';
+        toolName === 'task' ||
+        toolName === 'background_task' ||
+        toolName === 'delegate_task';
       if (!isDelegateTool) return;
 
       if (typeof output.output !== 'string') return;

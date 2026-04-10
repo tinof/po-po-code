@@ -7,37 +7,37 @@ export const MODEL_MAPPINGS = {
   openai: {
     orchestrator: { model: 'openai/gpt-5.4' },
     oracle: { model: 'openai/gpt-5.4', variant: 'high' },
-    librarian: { model: 'openai/gpt-5.4-mini', variant: 'low' },
+    browser: { model: 'openai/gpt-5.4-mini', variant: 'low' },
+    ops: { model: 'openai/gpt-5.4-mini', variant: 'low' },
     explorer: { model: 'openai/gpt-5.4-mini', variant: 'low' },
     designer: { model: 'openai/gpt-5.4-mini', variant: 'medium' },
-    fixer: { model: 'openai/gpt-5.4-mini', variant: 'low' },
   },
   kimi: {
     orchestrator: { model: 'kimi-for-coding/k2p5' },
     oracle: { model: 'kimi-for-coding/k2p5', variant: 'high' },
-    librarian: { model: 'kimi-for-coding/k2p5', variant: 'low' },
+    browser: { model: 'kimi-for-coding/k2p5', variant: 'low' },
+    ops: { model: 'kimi-for-coding/k2p5', variant: 'low' },
     explorer: { model: 'kimi-for-coding/k2p5', variant: 'low' },
     designer: { model: 'kimi-for-coding/k2p5', variant: 'medium' },
-    fixer: { model: 'kimi-for-coding/k2p5', variant: 'low' },
   },
   copilot: {
     orchestrator: { model: 'github-copilot/claude-opus-4.6' },
     oracle: { model: 'github-copilot/claude-opus-4.6', variant: 'high' },
-    librarian: { model: 'github-copilot/grok-code-fast-1', variant: 'low' },
+    browser: { model: 'github-copilot/grok-code-fast-1', variant: 'low' },
+    ops: { model: 'github-copilot/claude-sonnet-4.6', variant: 'low' },
     explorer: { model: 'github-copilot/grok-code-fast-1', variant: 'low' },
     designer: {
       model: 'github-copilot/gemini-3.1-pro-preview',
       variant: 'medium',
     },
-    fixer: { model: 'github-copilot/claude-sonnet-4.6', variant: 'low' },
   },
   'zai-plan': {
     orchestrator: { model: 'zai-coding-plan/glm-5' },
     oracle: { model: 'zai-coding-plan/glm-5', variant: 'high' },
-    librarian: { model: 'zai-coding-plan/glm-5', variant: 'low' },
+    browser: { model: 'zai-coding-plan/glm-5', variant: 'low' },
+    ops: { model: 'zai-coding-plan/glm-5', variant: 'low' },
     explorer: { model: 'zai-coding-plan/glm-5', variant: 'low' },
     designer: { model: 'zai-coding-plan/glm-5', variant: 'medium' },
-    fixer: { model: 'zai-coding-plan/glm-5', variant: 'low' },
   },
 } as const;
 
@@ -63,7 +63,7 @@ export function generateLiteConfig(
             s.allowedAgents.includes(agentName),
         ).map((s) => s.skillName);
 
-    if (agentName === 'designer' && !skills.includes('agent-browser')) {
+    if (agentName === 'browser' && !skills.includes('agent-browser')) {
       skills.push('agent-browser');
     }
 

@@ -5,11 +5,11 @@ export const AGENT_ALIASES: Record<string, string> = {
 };
 
 export const SUBAGENT_NAMES = [
+  'browser',
+  'ops',
   'explorer',
-  'librarian',
   'oracle',
   'designer',
-  'fixer',
   'council',
   'councillor',
   'council-master',
@@ -24,27 +24,27 @@ export type AgentName = (typeof ALL_AGENT_NAMES)[number];
 
 // Subagent delegation rules: which agents can spawn which subagents
 // orchestrator: can spawn all subagents (full delegation)
-// fixer: leaf node — prompt forbids delegation; use grep/glob for lookups
-// designer: can spawn explorer (for research during design)
-// explorer/librarian/oracle: cannot spawn any subagents (leaf nodes)
+// ops: leaf node — execution only, no delegation
+// browser: leaf node — observation only, no delegation
+// designer: leaf node — UI/UX only, no delegation
+// explorer/oracle: leaf nodes
 // Unknown agent types not listed here default to explorer-only access
-// Which agents each agent type can spawn via background_task tool.
 // councillor and council-master are internal — only CouncilManager spawns them.
 export const ORCHESTRATABLE_AGENTS = [
+  'browser',
+  'ops',
   'explorer',
-  'librarian',
   'oracle',
   'designer',
-  'fixer',
   'council',
 ] as const;
 
 export const SUBAGENT_DELEGATION_RULES: Record<AgentName, readonly string[]> = {
   orchestrator: ORCHESTRATABLE_AGENTS,
-  fixer: [],
+  browser: [],
+  ops: [],
   designer: [],
   explorer: [],
-  librarian: [],
   oracle: [],
   council: [],
   councillor: [],
@@ -56,10 +56,10 @@ export const SUBAGENT_DELEGATION_RULES: Record<AgentName, readonly string[]> = {
 export const DEFAULT_MODELS: Record<AgentName, string | undefined> = {
   orchestrator: undefined,
   oracle: 'openai/gpt-5.4',
-  librarian: 'openai/gpt-5.4-mini',
+  browser: 'openai/gpt-5.4-mini',
+  ops: 'openai/gpt-5.4-mini',
   explorer: 'openai/gpt-5.4-mini',
   designer: 'openai/gpt-5.4-mini',
-  fixer: 'openai/gpt-5.4-mini',
   council: 'openai/gpt-5.4-mini',
   councillor: 'openai/gpt-5.4-mini',
   'council-master': 'openai/gpt-5.4-mini',

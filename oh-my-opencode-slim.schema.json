@@ -130,7 +130,7 @@
             "fallback3"
           ]
         },
-        "librarian": {
+        "browser": {
           "type": "object",
           "properties": {
             "primary": {
@@ -157,7 +157,7 @@
             "fallback3"
           ]
         },
-        "fixer": {
+        "ops": {
           "type": "object",
           "properties": {
             "primary": {
@@ -190,8 +190,8 @@
         "oracle",
         "designer",
         "explorer",
-        "librarian",
-        "fixer"
+        "browser",
+        "ops"
       ],
       "additionalProperties": false
     },
@@ -494,14 +494,14 @@
                 "type": "string"
               }
             },
-            "librarian": {
+            "browser": {
               "minItems": 1,
               "type": "array",
               "items": {
                 "type": "string"
               }
             },
-            "fixer": {
+            "ops": {
               "minItems": 1,
               "type": "array",
               "items": {

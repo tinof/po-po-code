@@ -155,7 +155,7 @@ describe('BackgroundTaskManager', () => {
       });
 
       const task3 = manager.launch({
-        agent: 'fixer',
+        agent: 'ops',
         prompt: 'test3',
         description: 'test3',
         parentSessionId: 'parent-123',
@@ -1068,13 +1068,13 @@ describe('BackgroundTaskManager', () => {
       });
     });
 
-    test('librarian cannot delegate to any subagents', async () => {
+    test('browser cannot delegate to any subagents', async () => {
       const ctx = createMockContext();
       const manager = new BackgroundTaskManager(ctx);
 
-      // Launch a librarian task
-      const librarianTask = manager.launch({
-        agent: 'librarian',
+      // Launch a browser task
+      const browserTask = manager.launch({
+        agent: 'browser',
         prompt: 'test',
         description: 'test',
         parentSessionId: 'root-session',
@@ -1083,16 +1083,16 @@ describe('BackgroundTaskManager', () => {
       await Promise.resolve();
       await Promise.resolve();
 
-      // Launch subagent from librarian - should have tools disabled
-      const librarianSessionId = librarianTask.sessionId;
-      if (!librarianSessionId)
+      // Launch subagent from browser - should have tools disabled
+      const browserSessionId = browserTask.sessionId;
+      if (!browserSessionId)
         throw new Error('Expected sessionId to be defined');
 
       manager.launch({
         agent: 'explorer',
         prompt: 'test',
         description: 'test',
-        parentSessionId: librarianSessionId,
+        parentSessionId: browserSessionId,
       });
 
       await Promise.resolve();
@@ -1195,11 +1195,11 @@ describe('BackgroundTaskManager', () => {
       expect(manager.isAgentAllowed(orchestratorSessionId, 'explorer')).toBe(
         true,
       );
-      expect(manager.isAgentAllowed(orchestratorSessionId, 'fixer')).toBe(true);
-      expect(manager.isAgentAllowed(orchestratorSessionId, 'designer')).toBe(
+      expect(manager.isAgentAllowed(orchestratorSessionId, 'ops')).toBe(true);
+      expect(manager.isAgentAllowed(orchestratorSessionId, 'browser')).toBe(
         true,
       );
-      expect(manager.isAgentAllowed(orchestratorSessionId, 'librarian')).toBe(
+      expect(manager.isAgentAllowed(orchestratorSessionId, 'designer')).toBe(
         true,
       );
       expect(manager.isAgentAllowed(orchestratorSessionId, 'oracle')).toBe(
@@ -1211,8 +1211,8 @@ describe('BackgroundTaskManager', () => {
       const ctx = createMockContext();
       const manager = new BackgroundTaskManager(ctx);
 
-      const fixerTask = manager.launch({
-        agent: 'fixer',
+      const opsTask = manager.launch({
+        agent: 'ops',
         prompt: 'test',
         description: 'test',
         parentSessionId: 'root-session',
@@ -1221,13 +1221,13 @@ describe('BackgroundTaskManager', () => {
       await Promise.resolve();
       await Promise.resolve();
 
-      const fixerSessionId = fixerTask.sessionId;
-      if (!fixerSessionId) throw new Error('Expected sessionId to be defined');
+      const opsSessionId = opsTask.sessionId;
+      if (!opsSessionId) throw new Error('Expected sessionId to be defined');
 
-      // Fixer cannot delegate to any subagents
-      expect(manager.isAgentAllowed(fixerSessionId, 'explorer')).toBe(false);
-      expect(manager.isAgentAllowed(fixerSessionId, 'oracle')).toBe(false);
-      expect(manager.isAgentAllowed(fixerSessionId, 'designer')).toBe(false);
+      // Ops cannot delegate to any subagents
+      expect(manager.isAgentAllowed(opsSessionId, 'explorer')).toBe(false);
+      expect(manager.isAgentAllowed(opsSessionId, 'oracle')).toBe(false);
+      expect(manager.isAgentAllowed(opsSessionId, 'designer')).toBe(false);
     });
 
     test('isAgentAllowed returns false for leaf agents', async () => {
@@ -1249,11 +1249,11 @@ describe('BackgroundTaskManager', () => {
       if (!explorerSessionId)
         throw new Error('Expected sessionId to be defined');
 
-      expect(manager.isAgentAllowed(explorerSessionId, 'fixer')).toBe(false);
+      expect(manager.isAgentAllowed(explorerSessionId, 'ops')).toBe(false);
 
-      // Librarian is also a leaf agent
-      const librarianTask = manager.launch({
-        agent: 'librarian',
+      // Browser is also a leaf agent
+      const browserTask = manager.launch({
+        agent: 'browser',
         prompt: 'test',
         description: 'test',
         parentSessionId: 'root-session',
@@ -1262,13 +1262,11 @@ describe('BackgroundTaskManager', () => {
       await Promise.resolve();
       await Promise.resolve();
 
-      const librarianSessionId = librarianTask.sessionId;
-      if (!librarianSessionId)
+      const browserSessionId = browserTask.sessionId;
+      if (!browserSessionId)
         throw new Error('Expected sessionId to be defined');
 
-      expect(manager.isAgentAllowed(librarianSessionId, 'explorer')).toBe(
-        false,
-      );
+      expect(manager.isAgentAllowed(browserSessionId, 'explorer')).toBe(false);
     });
 
     test('isAgentAllowed treats unknown session as root orchestrator', () => {
@@ -1277,9 +1275,9 @@ describe('BackgroundTaskManager', () => {
 
       // Unknown sessions default to orchestrator, which can delegate to all subagents
       expect(manager.isAgentAllowed('unknown-session', 'explorer')).toBe(true);
-      expect(manager.isAgentAllowed('unknown-session', 'fixer')).toBe(true);
+      expect(manager.isAgentAllowed('unknown-session', 'ops')).toBe(true);
+      expect(manager.isAgentAllowed('unknown-session', 'browser')).toBe(true);
       expect(manager.isAgentAllowed('unknown-session', 'designer')).toBe(true);
-      expect(manager.isAgentAllowed('unknown-session', 'librarian')).toBe(true);
       expect(manager.isAgentAllowed('unknown-session', 'oracle')).toBe(true);
     });
 
@@ -1306,7 +1304,7 @@ describe('BackgroundTaskManager', () => {
         'explorer',
       ]);
       expect(manager.isAgentAllowed(customSessionId, 'explorer')).toBe(true);
-      expect(manager.isAgentAllowed(customSessionId, 'fixer')).toBe(false);
+      expect(manager.isAgentAllowed(customSessionId, 'ops')).toBe(false);
       expect(manager.isAgentAllowed(customSessionId, 'oracle')).toBe(false);
     });
 
@@ -1396,7 +1394,7 @@ describe('BackgroundTaskManager', () => {
 
       // Designer is a leaf node and cannot spawn subagents
       expect(manager.isAgentAllowed(designerSessionId, 'explorer')).toBe(false);
-      expect(manager.isAgentAllowed(designerSessionId, 'fixer')).toBe(false);
+      expect(manager.isAgentAllowed(designerSessionId, 'ops')).toBe(false);
       expect(manager.isAgentAllowed(designerSessionId, 'oracle')).toBe(false);
 
       // Level 3: Launch explorer from designer
@@ -1425,11 +1423,11 @@ describe('BackgroundTaskManager', () => {
       expect(manager.getAllowedSubagents(explorerSessionId)).toEqual([]);
     });
 
-    test('chain enforcement: fixer cannot spawn unauthorized agents mid-chain', async () => {
+    test('chain enforcement: ops cannot spawn unauthorized agents mid-chain', async () => {
       const ctx = createMockContext();
       const manager = new BackgroundTaskManager(ctx);
 
-      // Orchestrator spawns fixer
+      // Orchestrator spawns ops
       const orchestratorTask = manager.launch({
         agent: 'orchestrator',
         prompt: 'test',
@@ -1444,8 +1442,8 @@ describe('BackgroundTaskManager', () => {
       if (!orchestratorSessionId)
         throw new Error('Expected sessionId to be defined');
 
-      const fixerTask = manager.launch({
-        agent: 'fixer',
+      const opsTask = manager.launch({
+        agent: 'ops',
         prompt: 'test',
         description: 'test',
         parentSessionId: orchestratorSessionId,
@@ -1454,18 +1452,18 @@ describe('BackgroundTaskManager', () => {
       await Promise.resolve();
       await Promise.resolve();
 
-      const fixerSessionId = fixerTask.sessionId;
-      if (!fixerSessionId) throw new Error('Expected sessionId to be defined');
+      const opsSessionId = opsTask.sessionId;
+      if (!opsSessionId) throw new Error('Expected sessionId to be defined');
 
-      // Fixer should be blocked from spawning these agents
-      expect(manager.isAgentAllowed(fixerSessionId, 'oracle')).toBe(false);
-      expect(manager.isAgentAllowed(fixerSessionId, 'designer')).toBe(false);
-      expect(manager.isAgentAllowed(fixerSessionId, 'librarian')).toBe(false);
-      expect(manager.isAgentAllowed(fixerSessionId, 'fixer')).toBe(false);
+      // Ops should be blocked from spawning these agents
+      expect(manager.isAgentAllowed(opsSessionId, 'oracle')).toBe(false);
+      expect(manager.isAgentAllowed(opsSessionId, 'designer')).toBe(false);
+      expect(manager.isAgentAllowed(opsSessionId, 'browser')).toBe(false);
+      expect(manager.isAgentAllowed(opsSessionId, 'ops')).toBe(false);
 
-      // Explorer is also blocked (fixer is a leaf node)
-      expect(manager.isAgentAllowed(fixerSessionId, 'explorer')).toBe(false);
-      expect(manager.getAllowedSubagents(fixerSessionId)).toEqual([]);
+      // Explorer is also blocked (ops is a leaf node)
+      expect(manager.isAgentAllowed(opsSessionId, 'explorer')).toBe(false);
+      expect(manager.getAllowedSubagents(opsSessionId)).toEqual([]);
     });
 
     test('chain: completed parent does not affect child permissions', async () => {
@@ -1533,7 +1531,7 @@ describe('BackgroundTaskManager', () => {
       expect(designerTask.status).toBe('completed');
 
       // Explorer's own session tracking is independent — still works
-      expect(manager.isAgentAllowed(explorerSessionId, 'fixer')).toBe(false);
+      expect(manager.isAgentAllowed(explorerSessionId, 'ops')).toBe(false);
       expect(manager.getAllowedSubagents(explorerSessionId)).toEqual([]);
     });
 
@@ -1557,17 +1555,17 @@ describe('BackgroundTaskManager', () => {
         throw new Error('Expected sessionId to be defined');
 
       expect(manager.getAllowedSubagents(orchestratorSessionId)).toEqual([
+        'browser',
+        'ops',
         'explorer',
-        'librarian',
         'oracle',
         'designer',
-        'fixer',
         'council',
       ]);
 
-      // Fixer -> empty (leaf node)
-      const fixerTask = manager.launch({
-        agent: 'fixer',
+      // Ops -> empty (leaf node)
+      const opsTask = manager.launch({
+        agent: 'ops',
         prompt: 'test',
         description: 'test',
         parentSessionId: 'root-session',
@@ -1576,10 +1574,10 @@ describe('BackgroundTaskManager', () => {
       await Promise.resolve();
       await Promise.resolve();
 
-      const fixerSessionId = fixerTask.sessionId;
-      if (!fixerSessionId) throw new Error('Expected sessionId to be defined');
+      const opsSessionId = opsTask.sessionId;
+      if (!opsSessionId) throw new Error('Expected sessionId to be defined');
 
-      expect(manager.getAllowedSubagents(fixerSessionId)).toEqual([]);
+      expect(manager.getAllowedSubagents(opsSessionId)).toEqual([]);
 
       // Designer -> only explorer
       const designerTask = manager.launch({
@@ -1617,11 +1615,11 @@ describe('BackgroundTaskManager', () => {
 
       // Unknown session -> orchestrator (all subagents)
       expect(manager.getAllowedSubagents('unknown-session')).toEqual([
+        'browser',
+        'ops',
         'explorer',
-        'librarian',
         'oracle',
         'designer',
-        'fixer',
         'council',
       ]);
     });

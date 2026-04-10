@@ -9,11 +9,11 @@ import {
 
 export const DEFAULT_AGENT_MCPS: Record<AgentName, string[]> = {
   orchestrator: ['*'],
+  browser: ['chrome-devtools'],
+  ops: ['morph-mcp'],
   designer: [],
   oracle: ['serena', 'linkup', 'context7'],
-  librarian: ['linkup', 'context7', 'grep_app'],
-  explorer: ['serena', 'morph-mcp'],
-  fixer: ['morph-mcp'],
+  explorer: ['serena', 'morph-mcp', 'context7', 'grep_app'],
   council: [],
   councillor: [],
   'council-master': [],

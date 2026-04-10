@@ -2,6 +2,7 @@
 export { ast_grep_replace, ast_grep_search } from './ast-grep';
 export { createBackgroundTools } from './background';
 export { createCouncilTool } from './council';
+export { createDelegateTools } from './delegate';
 export {
   lsp_diagnostics,
   lsp_find_references,
@@ -10,4 +11,5 @@ export {
   lspManager,
   setUserLspConfig,
 } from './lsp';
+export { createMonitorTool } from './monitor';
 export { createWebfetchTool } from './smartfetch';

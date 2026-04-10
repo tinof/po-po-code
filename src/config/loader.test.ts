@@ -112,13 +112,13 @@ describe('loadPluginConfig', () => {
             fallback2: 'chutes/kimi-k2.5',
             fallback3: 'opencode/gpt-5-nano',
           },
-          librarian: {
+          browser: {
             primary: 'openai/gpt-5.4',
             fallback1: 'anthropic/claude-opus-4-6',
             fallback2: 'chutes/kimi-k2.5',
             fallback3: 'opencode/gpt-5-nano',
           },
-          fixer: {
+          ops: {
             primary: 'openai/gpt-5.4',
             fallback1: 'anthropic/claude-opus-4-6',
             fallback2: 'chutes/kimi-k2.5',
@@ -872,7 +872,7 @@ describe('JSONC config support', () => {
       path.join(userOpencodeDir, 'oh-my-opencode-slim.jsonc'),
       `{
         // User config with comments
-        "agents": { "librarian": { "model": "user-librarian" } }
+        "agents": { "explorer": { "model": "user-explorer" } }
       }`,
     );
 
@@ -880,7 +880,7 @@ describe('JSONC config support', () => {
     fs.mkdirSync(projectDir, { recursive: true });
 
     const config = loadPluginConfig(projectDir);
-    expect(config.agents?.librarian?.model).toBe('user-librarian');
+    expect(config.agents?.explorer?.model).toBe('user-explorer');
   });
 
   test('merges user .jsonc with project .jsonc', () => {
