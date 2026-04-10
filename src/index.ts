@@ -485,7 +485,7 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
           const { ORCHESTRATOR_PROMPT } = await import('./agents/orchestrator');
           output.system[0] =
             ORCHESTRATOR_PROMPT +
-            (output.system[0] ? '\n\n' + output.system[0] : '');
+            (output.system[0] ? `\n\n${output.system[0]}` : '');
         }
       }
     },
