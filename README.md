@@ -4,7 +4,7 @@
   <p><i>"Po po!" (Greek: Πω πω!) — An expression of astonishment or surprise.</i></p>
   <p>A highly specialized fork of <a href="https://github.com/alvinunreal/oh-my-opencode-slim">oh-my-opencode-slim</a>, reverse-engineering the internal architecture of Anthropic's Claude Code CLI to solve LLM context flooding.</p>
   <p><b>Status:</b> <i>Alpha — core architecture (context firewalls, advisor pattern, monitor tool) implemented. Phases D–E remaining.</i></p>
-  <p><small>Published npm package: <code>po-po-code</code></small></p>
+  <p><small>Planned npm package name: <code>po-po-code</code> (not published yet)</small></p>
 </div>
 
 ---
@@ -44,13 +44,23 @@ No more token-heavy polling loops. The `create_monitor` tool lets the Orchestrat
 
 ## 📦 Installation & Setup
 
-### Quick Start
+### Quick Start (after first npm release)
 
 ```bash
 bunx po-po-code@latest install
 ```
 
-The installer defaults to the **copilot** preset (Codex orchestrator + Gemini sub-agents via GitHub Copilot). To use a different provider:
+### Current setup (before npm publish)
+
+```bash
+git clone https://github.com/tinof/po-po-code.git
+cd po-po-code
+bun install
+bun run build
+bun run dev
+```
+
+The installer defaults to the **copilot** preset (Codex orchestrator + Gemini sub-agents via GitHub Copilot). After npm publish, you can use a different provider with:
 
 ```bash
 bunx po-po-code@latest install --preset=openai
