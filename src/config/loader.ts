@@ -160,7 +160,6 @@ export function loadPluginConfig(directory: string): PluginConfig {
       tmux: deepMerge(config.tmux, projectConfig.tmux),
       multiplexer: deepMerge(config.multiplexer, projectConfig.multiplexer),
       fallback: deepMerge(config.fallback, projectConfig.fallback),
-      council: deepMerge(config.council, projectConfig.council),
     };
   }
 

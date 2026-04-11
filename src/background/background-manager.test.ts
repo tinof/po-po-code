@@ -1560,7 +1560,6 @@ describe('BackgroundTaskManager', () => {
         'explorer',
         'oracle',
         'designer',
-        'council',
       ]);
 
       // Ops -> empty (leaf node)
@@ -1620,7 +1619,6 @@ describe('BackgroundTaskManager', () => {
         'explorer',
         'oracle',
         'designer',
-        'council',
       ]);
     });
   });

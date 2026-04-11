@@ -10,9 +10,6 @@ import {
 } from '../config';
 import { getAgentMcpList } from '../config/agent-mcps';
 import { createBrowserAgent } from './browser';
-import { createCouncilAgent } from './council';
-import { createCouncilMasterAgent } from './council-master';
-import { createCouncillorAgent } from './councillor';
 import { createDesignerAgent } from './designer';
 import { createExplorerAgent } from './explorer';
 import { createOpsAgent } from './ops';
@@ -60,7 +57,7 @@ function applyOverrides(
  * If configuredSkills is provided, it honors that list instead of defaults.
  *
  * Note: If the agent already explicitly sets question to 'deny', that is
- * respected (e.g. councillor and council-master should not ask questions).
+ * respected.
  */
 function applyDefaultPermissions(
   agent: AgentDefinition,
@@ -77,7 +74,7 @@ function applyDefaultPermissions(
     configuredSkills,
   );
 
-  // Respect explicit deny on question (councillor, council-master)
+  // Respect explicit deny on question if already set
   const questionPerm = existing.question === 'deny' ? 'deny' : 'allow';
 
   agent.config.permission = {
@@ -107,9 +104,6 @@ const SUBAGENT_FACTORIES: Record<SubagentName, AgentFactory> = {
   explorer: createExplorerAgent,
   oracle: createOracleAgent,
   designer: createDesignerAgent,
-  council: createCouncilAgent,
-  councillor: createCouncillorAgent,
-  'council-master': createCouncilMasterAgent,
 };
 
 // Public API
@@ -123,15 +117,6 @@ const SUBAGENT_FACTORIES: Record<SubagentName, AgentFactory> = {
  */
 export function createAgents(config?: PluginConfig): AgentDefinition[] {
   const getModelForAgent = (name: SubagentName): string => {
-    // Council and council-master agents' model comes from
-    // config.council.master.model so the TUI validates the user's
-    // actual model, not the hardcoded default
-    if (
-      (name === 'council' || name === 'council-master') &&
-      config?.council?.master?.model
-    ) {
-      return config.council.master.model;
-    }
     // Subagents always have a defined default model; cast is safe here
     return DEFAULT_MODELS[name] as string;
   };
@@ -198,15 +183,7 @@ export function getAgentConfigs(
       };
 
       // Apply classification-based visibility and mode
-      if (a.name === 'council') {
-        // Council is callable both as a primary agent (user-facing)
-        // and as a subagent (orchestrator can delegate to it)
-        sdkConfig.mode = 'all';
-      } else if (a.name === 'councillor' || a.name === 'council-master') {
-        // Internal agents — subagent mode, hidden from @ autocomplete
-        sdkConfig.mode = 'subagent';
-        sdkConfig.hidden = true;
-      } else if (isSubagent(a.name)) {
+      if (isSubagent(a.name)) {
         sdkConfig.mode = 'subagent';
       } else if (a.name === 'orchestrator') {
         sdkConfig.mode = 'primary';

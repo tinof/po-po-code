@@ -1,5 +1,5 @@
 /**
- * Shared session utilities for council and background managers.
+ * Shared session utilities for background managers.
  */
 
 import type { PluginInput } from '@opencode-ai/plugin';

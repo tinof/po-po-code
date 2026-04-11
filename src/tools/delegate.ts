@@ -38,9 +38,7 @@ export function createDelegateTools(
   _multiplexerConfig?: MultiplexerConfig,
   config?: PluginConfig,
 ): Record<string, ToolDefinition> {
-  const agentNames = SUBAGENT_NAMES.filter(
-    (n) => n !== 'councillor' && n !== 'council-master',
-  ).join(', ');
+  const agentNames = SUBAGENT_NAMES.join(', ');
 
   const delegate_task = tool({
     description: `Delegate a task to a specialist sub-agent.

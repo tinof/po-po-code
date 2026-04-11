@@ -10,9 +10,6 @@ export const SUBAGENT_NAMES = [
   'explorer',
   'oracle',
   'designer',
-  'council',
-  'councillor',
-  'council-master',
 ] as const;
 
 export const ORCHESTRATOR_NAME = 'orchestrator' as const;
@@ -29,14 +26,12 @@ export type AgentName = (typeof ALL_AGENT_NAMES)[number];
 // designer: leaf node — UI/UX only, no delegation
 // explorer/oracle: leaf nodes
 // Unknown agent types not listed here default to explorer-only access
-// councillor and council-master are internal — only CouncilManager spawns them.
 export const ORCHESTRATABLE_AGENTS = [
   'browser',
   'ops',
   'explorer',
   'oracle',
   'designer',
-  'council',
 ] as const;
 
 export const SUBAGENT_DELEGATION_RULES: Record<AgentName, readonly string[]> = {
@@ -46,9 +41,6 @@ export const SUBAGENT_DELEGATION_RULES: Record<AgentName, readonly string[]> = {
   designer: [],
   explorer: [],
   oracle: [],
-  council: [],
-  councillor: [],
-  'council-master': [],
 };
 
 // Default models for each agent
@@ -60,9 +52,6 @@ export const DEFAULT_MODELS: Record<AgentName, string | undefined> = {
   ops: 'openai/gpt-5.4-mini',
   explorer: 'openai/gpt-5.4-mini',
   designer: 'openai/gpt-5.4-mini',
-  council: 'openai/gpt-5.4-mini',
-  councillor: 'openai/gpt-5.4-mini',
-  'council-master': 'openai/gpt-5.4-mini',
 };
 
 // Polling configuration
@@ -85,9 +74,6 @@ If delegating, launch the specialist in the same turn you mention it.`;
 
 // Tmux pane spawn delay (ms) — gives TmuxSessionManager time to create pane
 export const TMUX_SPAWN_DELAY_MS = 500;
-
-// Stagger delay (ms) between parallel councillor launches to avoid tmux collisions
-export const COUNCILLOR_STAGGER_MS = 250;
 
 // Polling stability
 export const STABLE_POLLS_THRESHOLD = 3;

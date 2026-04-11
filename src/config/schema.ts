@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { CouncilConfigSchema } from './council-schema';
 
 const FALLBACK_AGENT_NAMES = [
   'orchestrator',
@@ -229,7 +228,6 @@ export const PluginConfigSchema = z.object({
   background: BackgroundTaskConfigSchema.optional(),
   todoContinuation: TodoContinuationConfigSchema.optional(),
   fallback: FailoverConfigSchema.optional(),
-  council: CouncilConfigSchema.optional(),
 });
 
 export type PluginConfig = z.infer<typeof PluginConfigSchema>;

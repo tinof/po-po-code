@@ -14,9 +14,6 @@ export const DEFAULT_AGENT_MCPS: Record<AgentName, string[]> = {
   designer: [],
   oracle: ['serena', 'linkup', 'context7'],
   explorer: ['serena', 'morph-mcp', 'context7', 'grep_app'],
-  council: [],
-  councillor: [],
-  'council-master': [],
 };
 
 /**

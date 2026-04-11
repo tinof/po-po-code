@@ -13,7 +13,6 @@
 
 | Doc | Contents |
 |-----|----------|
-| [Council Agent](council.md) | Multi-LLM consensus, presets, role prompts, timeouts |
 | [Multiplexer Integration](multiplexer-integration.md) | Real-time pane monitoring, layouts, troubleshooting |
 | [Cartography Skill](cartography.md) | Hierarchical codemap generation |
 

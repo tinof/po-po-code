@@ -3,7 +3,6 @@ import { createAgents, getAgentConfigs } from './agents';
 import { BackgroundTaskManager, MultiplexerSessionManager } from './background';
 import { loadPluginConfig, type MultiplexerConfig } from './config';
 import { parseList } from './config/agent-mcps';
-import { CouncilManager } from './council';
 import {
   createAutoUpdateCheckerHook,
   createChatHeadersHook,
@@ -20,7 +19,6 @@ import { getMultiplexer, startAvailabilityCheck } from './multiplexer';
 import {
   ast_grep_replace,
   ast_grep_search,
-  createCouncilTool,
   createDelegateTools,
   createMonitorTool,
   createWebfetchTool,
@@ -112,19 +110,6 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
 
   const monitorTools = createMonitorTool(ctx);
 
-  // Initialize council tools (only when council is configured)
-  const councilTools = config.council
-    ? createCouncilTool(
-        ctx,
-        new CouncilManager(
-          ctx,
-          config,
-          backgroundManager.getDepthTracker(),
-          multiplexerEnabled,
-        ),
-      )
-    : {};
-
   const mcps = createBuiltinMcps(config.disabled_mcps);
   const webfetch = createWebfetchTool(ctx);
 
@@ -189,7 +174,6 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
     tool: {
       ...delegateTools,
       ...monitorTools,
-      ...councilTools,
       webfetch,
       ...todoContinuationHook.tool,
       lsp_goto_definition,
