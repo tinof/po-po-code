@@ -24,24 +24,27 @@ export const MODEL_MAPPINGS = {
     orchestrator: {
       model: 'github-copilot/gpt-5.3-codex',
       temperature: 1,
-      variant: 'high',
+      variant: 'medium',
     },
     oracle: {
-      model: 'github-copilot/gemini-3-flash-preview',
+      model: 'github-copilot/gemini-3.1-pro-preview',
       temperature: 1,
       variant: 'high',
     },
     browser: {
-      model: 'google/gemini-3.1-pro-preview',
+      model: 'github-copilot/gemini-3.1-pro-preview',
       temperature: 1,
+      variant: 'low',
     },
     ops: {
-      model: 'github-copilot/gemini-3-flash-preview',
+      model: 'github-copilot/gpt-5.3-codex',
       temperature: 1,
+      variant: 'medium',
     },
     explorer: {
       model: 'github-copilot/gemini-3-flash-preview',
       temperature: 1,
+      variant: 'low',
     },
     designer: {
       model: 'github-copilot/gemini-3.1-pro-preview',

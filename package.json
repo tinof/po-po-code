@@ -1,6 +1,6 @@
 {
   "name": "po-po-code",
-  "version": "0.9.5",
+  "version": "0.9.7",
   "description": "Agent orchestration plugin for OpenCode with context firewalls and advisor delegation",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
