@@ -150,6 +150,40 @@ Then register it in `~/.config/opencode/opencode.json`:
 
 ---
 
+## 🔍 Linkup (Built-in Web Search MCP)
+
+Po-po-code ships with **[Linkup](https://linkup.so)** as a built-in remote MCP — no separate MCP entry in `opencode.json` is needed. Linkup provides real-time web search (`linkup-search`) and URL content extraction (`linkup-fetch`), and is available by default to the `@oracle` agent.
+
+The MCP connects to `https://mcp.linkup.so/mcp` and authenticates via your API key passed as a query parameter. Po-po-code handles the wiring automatically at startup.
+
+### Setup
+
+1. Sign up at [linkup.so](https://linkup.so) — **free tier includes $5 of credits per month**, which in practice is enough for heavy daily use without ever running out.
+2. Add your API key to your shell profile:
+
+```bash
+export LINKUP_API_KEY="your-api-key-here"  # add to ~/.zshrc to persist
+```
+
+That's it. No `opencode.json` changes needed. If you already have a `linkup` entry in your `opencode.json` from before installing po-po-code, you can remove it — po-po-code's built-in version takes precedence.
+
+### Agent access
+
+By default, only `@oracle` has Linkup enabled (deep research fits its role). To give other agents access, override their `mcps` list in your config:
+
+```jsonc
+// .opencode/po-po-code.jsonc
+{
+  "agents": {
+    "explorer": {
+      "mcps": ["serena", "context7", "grep_app", "linkup"]
+    }
+  }
+}
+```
+
+---
+
 ## 🗺️ Roadmap (Claude Code Parity)
 
 Detailed tasks live in [opencode-parity-plan.md](opencode-parity-plan.md). Summary:

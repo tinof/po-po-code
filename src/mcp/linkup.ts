@@ -5,11 +5,12 @@ import type { RemoteMcpConfig } from './types';
  * Tools: linkup-search (web search), linkup-fetch (URL content extraction)
  * @see https://github.com/LinkupPlatform/linkup-mcp-server
  */
+const apiKey = process.env.LINKUP_API_KEY;
+
 export const linkup: RemoteMcpConfig = {
   type: 'remote',
-  url: 'https://mcp.linkup.so/mcp',
-  headers: process.env.LINKUP_API_KEY
-    ? { Authorization: `Bearer ${process.env.LINKUP_API_KEY}` }
-    : undefined,
+  url: apiKey
+    ? `https://mcp.linkup.so/mcp?apiKey=${apiKey}`
+    : 'https://mcp.linkup.so/mcp',
   oauth: false,
 };
